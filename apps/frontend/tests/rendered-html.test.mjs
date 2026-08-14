@@ -19,20 +19,35 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>BuildVerdict — билды Dota 2<\/title>/i);
-  assert.match(html, /Поиск билдов и героев/);
+  assert.match(html, /<html lang="ru" data-theme="dark">/i);
+  assert.match(html, /<title>BuildVerdict — оцени билды Dota 2<\/title>/i);
+  assert.doesNotMatch(html, /Поиск билдов и героев/);
   assert.match(html, /Добавить билд/);
   assert.match(html, /Anti-Mage/);
-  assert.match(html, /Phantom Assassin/);
-  assert.match(html, /Shadow Shaman/);
-  assert.match(html, /Распределение голосов/);
+  assert.match(html, /Случайный билд/);
+  assert.match(html, /Все билды/);
+  assert.doesNotMatch(html, /Как тебе эта сборка/);
+  assert.match(html, /Написать комментарий/);
+  assert.match(html, />0 комментариев</);
+  assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
+  assert.match(html, /Ситуативно/);
+  assert.doesNotMatch(html, /Комментарий автора|Комментарий под билдом/);
+  assert.match(html, /aria-label="Включить светлую тему"/);
+  assert.match(html, /class="theme-icon"/);
+  assert.doesNotMatch(html, /☀|☾/);
+  assert.doesNotMatch(html, /Максимизируем фарм|3000–7000/);
+  assert.doesNotMatch(html, /Рейтинг|рейтингов|Точный рейтинг/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape|react-loading-skeleton/i);
 });
 
-test("renders five complete build cards", async () => {
+test("renders one random build with three vote actions", async () => {
   const response = await render();
   const html = await response.text();
-  assert.equal((html.match(/class="build-card"/g) ?? []).length, 5);
-  assert.equal((html.match(/class="vote-bar"/g) ?? []).length, 5);
-  assert.equal((html.match(/class="author-section"/g) ?? []).length, 5);
+  assert.equal((html.match(/class="random-card dota-stage"/g) ?? []).length, 1);
+  assert.match(html, /class="hero-viewer loading"/);
+  assert.match(html, /\/assets\/heroes\/renders\/antimage\.png/);
+  assert.match(html, /class="item-row inventory"/);
+  assert.doesNotMatch(html, /class="brand"|class="hero-nameplate"/);
+  assert.equal((html.match(/class="rating-button /g) ?? []).length, 3);
+  assert.equal((html.match(/class="vote-bar"/g) ?? []).length, 1);
 });

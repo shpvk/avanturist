@@ -1,0 +1,521 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import HeroModelViewer from "./hero-model-viewer";
+
+type View = "random" | "all";
+type Vote = "positive" | "situational" | "negative";
+type Theme = "dark" | "light";
+type AuthMode = "login" | "register";
+type FeedSort = "new" | "popular";
+
+type AuthUser = {
+  name: string;
+  email: string;
+  provider: "email" | "google";
+};
+
+type Build = {
+  id: string;
+  hero: string;
+  heroImage: string;
+  title: string;
+  role: string;
+  roleClass: string;
+  items: string[];
+  author: string;
+  avatar: string;
+  reputation: string;
+  verdict: string;
+  verdictType: string;
+  votes: [number, number, number];
+  comments: number;
+  date: string;
+};
+
+const initialBuilds: Build[] = [
+  {
+    id: "anti-mage-mana-pressure", hero: "Anti-Mage", heroImage: "/assets/heroes/antimage.png", title: "Антимаг без антимагии",
+    role: "Керри", roleClass: "carry",
+    items: ["bloodstone", "kaya", "yasha_and_kaya", "arcane_blink", "butterfly", "moon_shard"],
+    author: "SilentStep", avatar: "/assets/heroes/community-avatar.jpg", reputation: "1 245",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [82, 12, 6], comments: 0, date: "20 мая 2024",
+  },
+  {
+    id: "phantom-assassin-critical", hero: "Phantom Assassin", heroImage: "/assets/heroes/phantom_assassin.png", title: "Броня вместо уклонения",
+    role: "Керри", roleClass: "carry",
+    items: ["blade_mail", "heart", "bloodstone", "pipe", "overwhelming_blink", "lotus_orb"],
+    author: "d3str0yer", avatar: "/assets/heroes/bloodseeker.png", reputation: "980",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [76, 16, 8], comments: 0, date: "19 мая 2024",
+  },
+  {
+    id: "pudge-tank", hero: "Pudge", heroImage: "/assets/heroes/pudge.png", title: "Пудж через скорость атаки",
+    role: "Оффлейн", roleClass: "offlane",
+    items: ["manta", "butterfly", "moon_shard", "daedalus", "satanic", "overwhelming_blink"],
+    author: "HookMaster", avatar: "/assets/heroes/spirit_breaker.png", reputation: "2 310",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [69, 20, 11], comments: 0, date: "18 мая 2024",
+  },
+  {
+    id: "shadow-shaman-push", hero: "Shadow Shaman", heroImage: "/assets/heroes/shadow_shaman.png", title: "Шаман с руки",
+    role: "Саппорт", roleClass: "support",
+    items: ["mask_of_madness", "desolator", "manta", "butterfly", "daedalus", "arcane_blink"],
+    author: "TotemPower", avatar: "/assets/heroes/shadow_shaman.png", reputation: "760",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [74, 18, 8], comments: 0, date: "17 мая 2024",
+  },
+  {
+    id: "leshrac-zones", hero: "Leshrac", heroImage: "/assets/heroes/leshrac.png", title: "Физический Лешрак",
+    role: "Мид", roleClass: "mid",
+    items: ["shadow_blade", "daedalus", "butterfly", "moon_shard", "satanic", "overwhelming_blink"],
+    author: "ArcWardenX", avatar: "/assets/heroes/enigma.png", reputation: "1 530",
+    verdict: "Нейтрально", verdictType: "neutral", votes: [46, 34, 20], comments: 0, date: "16 мая 2024",
+  },
+];
+
+const heroOptions = [
+  { hero: "Anti-Mage", heroImage: "/assets/heroes/antimage.png", role: "Керри", roleClass: "carry" },
+  { hero: "Phantom Assassin", heroImage: "/assets/heroes/phantom_assassin.png", role: "Керри", roleClass: "carry" },
+  { hero: "Pudge", heroImage: "/assets/heroes/pudge.png", role: "Оффлейн", roleClass: "offlane" },
+  { hero: "Shadow Shaman", heroImage: "/assets/heroes/shadow_shaman.png", role: "Саппорт", roleClass: "support" },
+  { hero: "Leshrac", heroImage: "/assets/heroes/leshrac.png", role: "Мид", roleClass: "mid" },
+];
+
+const itemOptions = Array.from(new Set(initialBuilds.flatMap((build) => build.items)));
+
+function reputationValue(reputation: string) {
+  return Number(reputation.replaceAll(/\D/g, "")) || 0;
+}
+
+function commentsLabel(count: number) {
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+  const word = lastTwoDigits >= 11 && lastTwoDigits <= 14 ? "комментариев" : lastDigit === 1 ? "комментарий" : lastDigit >= 2 && lastDigit <= 4 ? "комментария" : "комментариев";
+  return `${count} ${word}`;
+}
+
+const voteOptions: Array<{ value: Vote; icon: string; label: string; hint: string }> = [
+  { value: "positive", icon: "👍", label: "Лайк", hint: "Билд хороший" },
+  { value: "situational", icon: "◐", label: "Ситуативно", hint: "Подойдёт не всегда" },
+  { value: "negative", icon: "👎", label: "Дизлайк", hint: "Билд не работает" },
+];
+
+function ItemIcons({ items, large = false, inventory = false }: { items: string[]; large?: boolean; inventory?: boolean }) {
+  return (
+    <div className={`item-row${large ? " large" : ""}${inventory ? " inventory" : ""}`}>
+      {items.map((item) => (
+        <img
+          key={item}
+          src={`/assets/items/${item}.png`}
+          alt=""
+          width={88}
+          height={64}
+          loading="lazy"
+          decoding="async"
+        />
+      ))}
+    </div>
+  );
+}
+
+function Author({ build }: { build: Build }) {
+  return (
+    <div className="author-row">
+      <img src={build.avatar} alt="" width={42} height={42} loading="lazy" decoding="async" />
+      <div><strong>{build.author}</strong><span>Репутация: {build.reputation} <b>▲</b></span></div>
+    </div>
+  );
+}
+
+function BuildCard({ build, index }: { build: Build; index: number }) {
+  return (
+    <article className="build-card">
+      <div className="hero-section">
+        <img className="hero-image" src={build.heroImage} alt={build.hero} width={256} height={144} loading={index === 0 ? "eager" : "lazy"} decoding="async" />
+        <div className="hero-copy"><h2>{build.hero}</h2><button className="build-title" type="button">{build.title}</button><div className="hero-meta"><span className={`role-badge ${build.roleClass}`}>{build.role}</span></div></div>
+      </div>
+      <div className="items-section">
+        <h3>Предметы</h3><ItemIcons items={build.items} />
+      </div>
+      <div className="author-section">
+        <Author build={build} />
+        <div className="verdict-block"><span>Вердикт</span><strong className={`verdict ${build.verdictType}`}>{build.verdict}</strong></div>
+      </div>
+      <div className="votes-section">
+        <span>Распределение голосов</span><div className="vote-bar" aria-label={`Голоса: ${build.votes.join(", ")} процентов`}><i className="positive" style={{ width: `${build.votes[0]}%` }} /><i className="uncertain" style={{ width: `${build.votes[1]}%` }} /><i className="negative" style={{ width: `${build.votes[2]}%` }} /></div><div className="vote-values"><b>{build.votes[0]}%</b><b>{build.votes[1]}%</b><b>{build.votes[2]}%</b></div>
+      </div>
+      <div className="card-meta"><span className="comments"><i aria-hidden="true">•••</i>{build.comments}</span><time>{build.date}</time></div>
+    </article>
+  );
+}
+
+function Header({ view, theme, user, heroSearch, onHeroSearchChange, onViewChange, onThemeToggle, onAddBuild, onAuthOpen, onLogout }: { view: View; theme: Theme; user: AuthUser | null; heroSearch: string; onHeroSearchChange: (value: string) => void; onViewChange: (view: View) => void; onThemeToggle: () => void; onAddBuild: () => void; onAuthOpen: () => void; onLogout: () => void }) {
+  return (
+    <header className="topbar">
+      <div className="topbar-inner">
+        <nav className="header-nav" aria-label="Основные разделы">
+          <button className={view === "random" ? "active" : ""} type="button" onClick={() => onViewChange("random")}>Случайный билд</button>
+          <button className={view === "all" ? "active" : ""} type="button" onClick={() => onViewChange("all")}>Все билды</button>
+        </nav>
+        {view === "all" && <label className="search-field">
+          <span className="sr-only">Поиск героя</span><span className="search-icon" aria-hidden="true" /><input type="search" value={heroSearch} onChange={(event) => onHeroSearchChange(event.target.value)} placeholder="Найти героя..." autoComplete="off" />
+        </label>}
+        <button
+          className={`theme-toggle ${theme}`}
+          type="button"
+          onClick={onThemeToggle}
+          aria-label={theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"}
+          title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
+          aria-pressed={theme === "dark"}
+        >
+          <span className="theme-icon" aria-hidden="true" />
+        </button>
+        <div className="header-actions">
+          <button className="primary-button" type="button" onClick={onAddBuild}>Добавить билд</button>
+          {user ? (
+            <button className="account-button" type="button" onClick={onLogout} aria-label={`Выйти из аккаунта ${user.name}`}>
+              <span className="account-avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
+              <span className="account-copy"><strong>{user.name}</strong><small>Выйти</small></span>
+            </button>
+          ) : (
+            <button className="login-button" type="button" onClick={onAuthOpen}><span className="person-icon" aria-hidden="true" />Войти</button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote | null; onVote: (vote: Vote) => void; onNext: () => void }) {
+  const [commentingBuildId, setCommentingBuildId] = useState<string | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [localComments, setLocalComments] = useState<Record<string, Array<{ id: string; text: string }>>>({});
+  const displayedVotes = useMemo(() => {
+    if (!vote) return build.votes;
+    const values = [...build.votes] as [number, number, number];
+    values[vote === "positive" ? 0 : vote === "situational" ? 1 : 2] += 1;
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return values.map((value) => Math.round((value / total) * 100)) as [number, number, number];
+  }, [build, vote]);
+  const heroAssetName = build.heroImage.split("/").at(-1)?.replace(/\.png$/, "") ?? "antimage";
+  const buildComments = localComments[build.id] ?? [];
+  const isCommenting = commentingBuildId === build.id;
+
+  const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = commentDraft.trim();
+    if (!text) return;
+    setLocalComments((current) => ({
+      ...current,
+      [build.id]: [...(current[build.id] ?? []), { id: `${build.id}-${Date.now()}`, text }],
+    }));
+    setCommentDraft("");
+    setCommentingBuildId(null);
+  };
+
+  return (
+    <main className="random-main">
+      <section className="random-heading">
+        <button className="shuffle-button" type="button" onClick={onNext}><span aria-hidden="true">↻</span> Другой билд</button>
+      </section>
+
+      <article className="random-card dota-stage">
+        <div className="dota-build-panel">
+          <div className="dota-hero-identity">
+            <img src={build.heroImage} alt="" width={256} height={144} decoding="async" />
+            <div><span className={`role-badge ${build.roleClass}`}>{build.role}</span><h2>{build.hero}</h2></div>
+          </div>
+          <h3 className="dota-build-title">{build.title}</h3>
+          <div className="dota-inventory"><span className="section-label">Предметы</span><ItemIcons items={build.items} inventory /></div>
+          <div className="random-author">
+            <Author build={build} />
+            <div className="random-author-meta">
+              <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(build.comments + buildComments.length)}</span>
+              <button className="comment-trigger" type="button" aria-expanded={isCommenting} aria-controls={`comment-form-${build.id}`} onClick={() => { setCommentDraft(""); setCommentingBuildId(isCommenting ? null : build.id); }}>Написать комментарий</button>
+            </div>
+          </div>
+          {isCommenting && (
+            <form id={`comment-form-${build.id}`} className="comment-composer" onSubmit={handleCommentSubmit}>
+              <label className="sr-only" htmlFor={`comment-${build.id}`}>Комментарий к билду</label>
+              <textarea id={`comment-${build.id}`} value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} maxLength={500} rows={3} placeholder="Что думаете об этой сборке?" required />
+              <div className="comment-composer-footer"><span>{commentDraft.length}/500</span><button type="button" onClick={() => { setCommentDraft(""); setCommentingBuildId(null); }}>Отмена</button><button type="submit" disabled={!commentDraft.trim()}>Опубликовать</button></div>
+            </form>
+          )}
+          {buildComments.length > 0 && (
+            <div className="local-comments" aria-live="polite">
+              {buildComments.map((comment) => <div className="local-comment" key={comment.id}><strong>Вы</strong><p>{comment.text}</p></div>)}
+            </div>
+          )}
+        </div>
+
+        <div className="hero-showcase">
+          <div className="hero-aura" aria-hidden="true" />
+          <HeroModelViewer key={heroAssetName} hero={build.hero} slug={heroAssetName} />
+        </div>
+
+        <aside className="rating-panel">
+          <div className="rating-copy"><h2>{vote ? "Спасибо за голос" : "Оценить билд"}</h2></div>
+          <div className="rating-actions">
+            {voteOptions.map((option) => (
+              <button key={option.value} className={`rating-button ${option.value}${vote === option.value ? " selected" : ""}`} type="button" aria-pressed={vote === option.value} onClick={() => onVote(option.value)}>
+                <span className="rating-icon" aria-hidden="true">{option.icon}</span><span><strong>{option.label}</strong><small>{option.hint}</small></span>
+              </button>
+            ))}
+          </div>
+          <div className="random-results">
+            <div><span>Мнение сообщества</span><strong>{displayedVotes[0] + displayedVotes[1]}% считают билд полезным</strong></div>
+            <div className="vote-bar"><i className="positive" style={{ width: `${displayedVotes[0]}%` }} /><i className="uncertain" style={{ width: `${displayedVotes[1]}%` }} /><i className="negative" style={{ width: `${displayedVotes[2]}%` }} /></div>
+            <div className="vote-values"><b>{displayedVotes[0]}%</b><b>{displayedVotes[1]}%</b><b>{displayedVotes[2]}%</b></div>
+          </div>
+          {vote && <button className="next-build-button" type="button" onClick={onNext}>Следующий билд <span aria-hidden="true">→</span></button>}
+        </aside>
+      </article>
+    </main>
+  );
+}
+
+function AddBuildDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (build: Build) => void }) {
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const toggleItem = (item: string) => {
+    setSelectedItems((current) => current.includes(item) ? current.filter((value) => value !== item) : current.length < 6 ? [...current, item] : current);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const selectedHero = heroOptions.find((option) => option.hero === formData.get("hero"));
+    if (!selectedHero || selectedItems.length === 0) return;
+
+    const title = String(formData.get("title") ?? "").trim();
+    if (!title) return;
+
+    onSubmit({
+      id: `local-${Date.now()}`,
+      ...selectedHero,
+      title,
+      items: selectedItems,
+      author: "Вы",
+      avatar: "/assets/heroes/community-avatar.jpg",
+      reputation: "0",
+      verdict: "Нет оценок",
+      verdictType: "neutral",
+      votes: [0, 0, 0],
+      comments: 0,
+      date: "сегодня",
+    });
+  };
+
+  return (
+    <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="add-build-dialog" role="dialog" aria-modal="true" aria-labelledby="add-build-title">
+        <div className="dialog-heading"><div><span className="eyebrow">Новая сборка</span><h2 id="add-build-title">Добавить билд</h2><p>Придумайте название и выберите предметы.</p></div><button type="button" onClick={onClose} aria-label="Закрыть форму">×</button></div>
+        <form onSubmit={handleSubmit}>
+          <label className="form-field"><span>Герой</span><select name="hero" defaultValue={heroOptions[0].hero} required>{heroOptions.map((option) => <option key={option.hero}>{option.hero}</option>)}</select></label>
+          <label className="form-field"><span>Название</span><input name="title" type="text" minLength={2} maxLength={80} placeholder="Придумайте название сборки" required /></label>
+          <fieldset className="item-picker"><legend>Предметы <small>от 1 до 6</small></legend><div>{itemOptions.map((item) => <button key={item} className={selectedItems.includes(item) ? "selected" : ""} type="button" onClick={() => toggleItem(item)} aria-pressed={selectedItems.includes(item)} aria-label={`Выбрать предмет ${item.replaceAll("_", " ")}`}><img src={`/assets/items/${item}.png`} alt="" width={88} height={64} /></button>)}</div></fieldset>
+          <div className="dialog-actions"><span>{selectedItems.length}/6 предметов</span><button className="cancel-button" type="button" onClick={onClose}>Отмена</button><button className="submit-build-button" type="submit" disabled={selectedItems.length === 0}>Добавить билд</button></div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function AuthDialog({ onClose, onAuthenticated }: { onClose: () => void; onAuthenticated: (user: AuthUser) => void }) {
+  const [mode, setMode] = useState<AuthMode>("login");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  const selectMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setError("");
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+
+    if (mode === "register") {
+      const name = String(formData.get("name") ?? "").trim();
+      const passwordConfirmation = String(formData.get("passwordConfirmation") ?? "");
+      if (password !== passwordConfirmation) {
+        setError("Пароли не совпадают");
+        return;
+      }
+      onAuthenticated({ name, email, provider: "email" });
+      return;
+    }
+
+    const emailName = email.split("@")[0].replaceAll(/[._-]+/g, " ").trim();
+    onAuthenticated({ name: emailName || "Пользователь", email, provider: "email" });
+  };
+
+  return (
+    <div className="dialog-backdrop auth-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="auth-dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <button className="auth-close" type="button" onClick={onClose} aria-label="Закрыть окно авторизации">×</button>
+        <div className="auth-heading">
+          <span className="auth-mark" aria-hidden="true">BV</span>
+          <h2 id="auth-title">{mode === "login" ? "С возвращением" : "Создать аккаунт"}</h2>
+          <p>{mode === "login" ? "Войдите, чтобы публиковать и обсуждать сборки." : "Присоединяйтесь к сообществу необычных билдов."}</p>
+        </div>
+
+        <div className="auth-tabs" role="tablist" aria-label="Авторизация">
+          <button className={mode === "login" ? "active" : ""} type="button" role="tab" aria-selected={mode === "login"} onClick={() => selectMode("login")}>Вход</button>
+          <button className={mode === "register" ? "active" : ""} type="button" role="tab" aria-selected={mode === "register"} onClick={() => selectMode("register")}>Регистрация</button>
+        </div>
+
+        <button className="google-auth-button" type="button" onClick={() => onAuthenticated({ name: "Пользователь Google", email: "", provider: "google" })}>
+          <span aria-hidden="true">G</span>Продолжить с Google
+        </button>
+
+        <div className="auth-divider"><span>или по почте</span></div>
+
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {mode === "register" && (
+            <label className="auth-field"><span>Имя</span><input name="name" type="text" minLength={2} maxLength={36} autoComplete="name" placeholder="Как вас называть" required /></label>
+          )}
+          <label className="auth-field"><span>Email</span><input name="email" type="email" autoComplete="email" placeholder="you@example.com" required /></label>
+          <label className="auth-field"><span>Пароль</span><input name="password" type="password" minLength={8} autoComplete={mode === "login" ? "current-password" : "new-password"} placeholder="Минимум 8 символов" required /></label>
+          {mode === "register" && (
+            <label className="auth-field"><span>Повторите пароль</span><input name="passwordConfirmation" type="password" minLength={8} autoComplete="new-password" placeholder="Ещё раз" required /></label>
+          )}
+          {error && <p className="auth-error" role="alert">{error}</p>}
+          <button className="auth-submit" type="submit">{mode === "login" ? "Войти" : "Зарегистрироваться"}</button>
+        </form>
+
+        <p className="auth-legal">Продолжая, вы принимаете правила сообщества и политику конфиденциальности.</p>
+      </section>
+    </div>
+  );
+}
+
+function AllBuilds({ builds, heroSearch, onHeroSearchChange }: { builds: Build[]; heroSearch: string; onHeroSearchChange: (value: string) => void }) {
+  const [feedSort, setFeedSort] = useState<FeedSort>("new");
+  const normalizedHeroSearch = heroSearch.trim().toLocaleLowerCase("ru-RU");
+  const heroBuilds = normalizedHeroSearch ? builds.filter((build) => build.hero.toLocaleLowerCase("ru-RU").includes(normalizedHeroSearch)) : builds;
+  const displayedBuilds = feedSort === "popular" ? [...heroBuilds].sort((first, second) => reputationValue(second.reputation) - reputationValue(first.reputation)) : heroBuilds;
+
+  return (
+    <main className="main-content all-builds-main">
+      <div className="all-builds-heading"><div><h1>Все билды</h1><p>Свежие сборки сообщества для всех ролей.</p></div><div className="feed-tabs" role="group" aria-label="Порядок билдов"><button className={feedSort === "new" ? "active" : ""} type="button" aria-pressed={feedSort === "new"} onClick={() => setFeedSort("new")}>Новые</button><button className={feedSort === "popular" ? "active" : ""} type="button" aria-pressed={feedSort === "popular"} onClick={() => setFeedSort("popular")}>Популярные</button></div></div>
+      <section className="filters" aria-label="Фильтры билдов">
+        <label className="filter-field"><span>Позиция</span><select defaultValue="all"><option value="all">Все позиции</option><option>Керри</option><option>Мид</option><option>Оффлейн</option><option>Саппорт</option></select></label>
+        <button className="reset-button" type="button" onClick={() => onHeroSearchChange("")}><span aria-hidden="true">↻</span>Сбросить фильтры</button>
+        <label className="sort-field"><span className="sort-icon" aria-hidden="true">↕</span><select aria-label="Сортировка" value={feedSort} onChange={(event) => setFeedSort(event.target.value as FeedSort)}><option value="new">Сначала новые</option><option value="popular">По репутации автора</option></select></label>
+      </section>
+      <section className="build-list" aria-label="Список билдов" aria-live="polite">
+        {displayedBuilds.map((build, index) => <BuildCard build={build} index={index} key={build.id} />)}
+        {displayedBuilds.length === 0 && <p className="empty-builds">{normalizedHeroSearch && heroBuilds.length === 0 ? `На героя «${heroSearch.trim()}» пока нет билдов :(` : "Билдов с такими фильтрами пока нет :("}</p>}
+      </section>
+    </main>
+  );
+}
+
+export default function BuildVerdictClient() {
+  const [builds, setBuilds] = useState<Build[]>(initialBuilds);
+  const [view, setView] = useState<View>("random");
+  const [randomIndex, setRandomIndex] = useState(0);
+  const [vote, setVote] = useState<Vote | null>(null);
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [isAddBuildOpen, setIsAddBuildOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [heroSearch, setHeroSearch] = useState("");
+
+  useEffect(() => {
+    let savedTheme: Theme = "dark";
+    let savedUser: AuthUser | null = null;
+    try {
+      if (window.localStorage.getItem("buildverdict-theme") === "light") savedTheme = "light";
+      const savedUserJson = window.localStorage.getItem("buildverdict-user");
+      if (savedUserJson) {
+        const parsedUser = JSON.parse(savedUserJson) as Partial<AuthUser>;
+        if (typeof parsedUser.name === "string" && typeof parsedUser.email === "string" && (parsedUser.provider === "email" || parsedUser.provider === "google")) {
+          savedUser = { name: parsedUser.name, email: parsedUser.email, provider: parsedUser.provider };
+        }
+      }
+    } catch {
+      // Storage may be unavailable in privacy-restricted browser contexts.
+    }
+    document.documentElement.dataset.theme = savedTheme;
+    const restoreTimer = window.setTimeout(() => {
+      setTheme(savedTheme);
+      if (savedUser) setAuthUser(savedUser);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(restoreTimer);
+    };
+  }, []);
+
+  const showNextBuild = () => {
+    setRandomIndex((current) => (current + 1 + Math.floor(Math.random() * (builds.length - 1))) % builds.length);
+    setVote(null);
+  };
+
+  const addBuild = (build: Build) => {
+    setBuilds((current) => [build, ...current]);
+    setRandomIndex(0);
+    setVote(null);
+    setView("all");
+    setIsAddBuildOpen(false);
+  };
+
+  const toggleTheme = () => {
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      try {
+        window.localStorage.setItem("buildverdict-theme", next);
+      } catch {
+        // The switch still works for the current session without storage.
+      }
+      return next;
+    });
+  };
+
+  const authenticate = (user: AuthUser) => {
+    setAuthUser(user);
+    setIsAuthOpen(false);
+    try {
+      window.localStorage.setItem("buildverdict-user", JSON.stringify(user));
+    } catch {
+      // The account remains active for the current session without storage.
+    }
+  };
+
+  const logout = () => {
+    setAuthUser(null);
+    try {
+      window.localStorage.removeItem("buildverdict-user");
+    } catch {
+      // The in-memory session has already been cleared.
+    }
+  };
+
+  return (
+    <div className="site-shell">
+      <Header view={view} theme={theme} user={authUser} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} onAuthOpen={() => setIsAuthOpen(true)} onLogout={logout} />
+      {view === "random" ? <RandomBuild build={builds[randomIndex]} vote={vote} onVote={setVote} onNext={showNextBuild} /> : <AllBuilds builds={builds} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} />}
+      {isAddBuildOpen && <AddBuildDialog onClose={() => setIsAddBuildOpen(false)} onSubmit={addBuild} />}
+      {isAuthOpen && <AuthDialog onClose={() => setIsAuthOpen(false)} onAuthenticated={authenticate} />}
+    </div>
+  );
+}
