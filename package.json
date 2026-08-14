@@ -1,0 +1,23 @@
+{
+  "name": "build-verdict",
+  "private": true,
+  "scripts": {
+    "frontend:dev": "npm --prefix apps/frontend run dev",
+    "frontend:build": "npm --prefix apps/frontend run build",
+    "frontend:start": "npm --prefix apps/frontend run start",
+    "frontend:test": "npm --prefix apps/frontend run test",
+    "frontend:lint": "npm --prefix apps/frontend run lint",
+    "backend:dev": "npm --prefix apps/backend/core run start:dev",
+    "backend:build": "npm --prefix apps/backend/core run build",
+    "backend:start": "npm --prefix apps/backend/core run start",
+    "backend:test": "npm --prefix apps/backend/core run test",
+    "backend:test:e2e": "npm --prefix apps/backend/core run test:e2e",
+    "backend:lint": "npm --prefix apps/backend/core run lint",
+    "build": "npm run backend:build && npm run frontend:build",
+    "test": "npm run backend:test && npm run frontend:test",
+    "lint": "npm run backend:lint && npm run frontend:lint"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

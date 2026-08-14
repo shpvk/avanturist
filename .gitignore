@@ -1,0 +1,66 @@
+# Local AI/tooling configuration
+.cloud/
+.claude/
+.codex/
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Frontend build tooling source (not generated output)
+!apps/frontend/build/
+!apps/frontend/build/**
+
+# Caches and temporary files
+.cache/
+.npm/
+.yarn/
+.pnpm-store/
+.eslintcache
+tmp/
+temp/
+*.tmp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local Docker and service data
+.docker-data/
+docker-data/
+data/
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test artifacts
+.nyc_output/
+test-results/
+playwright-report/
+
+# Runtime files
+*.pid
+*.pid.lock
