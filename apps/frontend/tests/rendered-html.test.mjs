@@ -36,7 +36,12 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /placeholder="Что думаете об этой сборке\?"/);
   assert.match(html, /3 комментария</);
   assert.match(html, /class="comment-item"/);
-  assert.match(html, /Муншард последним предметом/);
+  assert.match(html, /Каю на антимаге/);
+  // Collapsed by default: only the first two comments render, the rest sit behind the toggle.
+  assert.equal((html.match(/class="comment-item"/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /Муншард последним предметом/);
+  assert.match(html, /Показать все \(3\)/);
+  assert.match(html, /aria-expanded="false" aria-controls="comment-list-anti-mage-mana-pressure"/);
   assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
   assert.match(html, /Ситуативно/);
   assert.match(html, /alt="Bloodstone"/);

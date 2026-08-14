@@ -163,6 +163,8 @@ function commentsLabel(count: number) {
   return `${count} ${word}`;
 }
 
+const collapsedCommentCount = 2;
+
 const voteOptions: Array<{ value: Vote; icon: string; label: string; hint: string }> = [
   { value: "positive", icon: "👍", label: "Лайк", hint: "Билд хороший" },
   { value: "situational", icon: "◐", label: "Ситуативно", hint: "Подойдёт не всегда" },
@@ -259,6 +261,8 @@ function Header({ view, theme, user, onViewChange, onThemeToggle, onAddBuild }: 
 function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote | null; onVote: (vote: Vote) => void; onNext: () => void }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [localComments, setLocalComments] = useState<Record<string, BuildComment[]>>({});
+  // Tracked by build id instead of a boolean so switching builds collapses again.
+  const [expandedBuildId, setExpandedBuildId] = useState<string | null>(null);
   const displayedVotes = useMemo(() => {
     if (!vote) return build.votes;
     const values = [...build.votes] as [number, number, number];
@@ -268,6 +272,10 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
   }, [build, vote]);
   const heroAssetName = build.heroImage.split("/").at(-1)?.replace(/\.png$/, "") ?? "antimage";
   const buildComments = [...build.comments, ...(localComments[build.id] ?? [])];
+  // Collapsed the list stops at two entries, which keeps the composer fully in view.
+  const isCommentsExpanded = expandedBuildId === build.id;
+  const visibleComments = isCommentsExpanded ? buildComments : buildComments.slice(0, collapsedCommentCount);
+  const hiddenCommentCount = buildComments.length - visibleComments.length;
   // Drafts are kept per build so switching builds shows that build's own unsent text.
   const commentDraft = drafts[build.id] ?? "";
   const setCommentDraft = (value: string) => setDrafts((current) => ({ ...current, [build.id]: value }));
@@ -316,10 +324,24 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
           <section className="build-comments" aria-label="Комментарии к билду">
             <div className="build-comments-head">
               <span className="section-label">Комментарии</span>
-              <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(buildComments.length)}</span>
+              <div className="build-comments-tools">
+                <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(buildComments.length)}</span>
+                {buildComments.length > collapsedCommentCount && (
+                  <button
+                    className="comments-toggle"
+                    type="button"
+                    aria-expanded={isCommentsExpanded}
+                    aria-controls={`comment-list-${build.id}`}
+                    onClick={() => setExpandedBuildId(isCommentsExpanded ? null : build.id)}
+                  >
+                    {isCommentsExpanded ? "Свернуть" : `Показать все (${buildComments.length})`}
+                    <span aria-hidden="true">{isCommentsExpanded ? "▲" : "▼"}</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <ol className="comment-list" aria-live="polite">
-              {buildComments.map((comment) => (
+            <ol id={`comment-list-${build.id}`} className="comment-list" aria-live="polite">
+              {visibleComments.map((comment) => (
                 <li className="comment-item" key={comment.id}>
                   <Image src={comment.avatar} alt="" width={36} height={36} loading="lazy" unoptimized />
                   <div>
@@ -330,6 +352,11 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
               ))}
               {buildComments.length === 0 && <li className="comment-empty">Комментариев пока нет — напишите первый.</li>}
             </ol>
+            {hiddenCommentCount > 0 && (
+              <button className="comments-more" type="button" onClick={() => setExpandedBuildId(build.id)}>
+                Ещё {commentsLabel(hiddenCommentCount)}
+              </button>
+            )}
             <form className="comment-composer" onSubmit={handleCommentSubmit}>
               <label className="sr-only" htmlFor={`comment-${build.id}`}>Комментарий к билду</label>
               <textarea id={`comment-${build.id}`} value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} maxLength={500} rows={2} placeholder="Что думаете об этой сборке?" />
@@ -354,7 +381,9 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
           <div className="random-results" aria-live="polite">
             <div><span>Мнение сообщества</span><strong>{displayedVotes[0] + displayedVotes[1]}% считают билд полезным</strong></div>
             <div className="vote-bar" role="img" aria-label={`Лайк ${displayedVotes[0]}%, ситуативно ${displayedVotes[1]}%, дизлайк ${displayedVotes[2]}%`}><i className="positive" style={{ width: `${displayedVotes[0]}%` }} /><i className="uncertain" style={{ width: `${displayedVotes[1]}%` }} /><i className="negative" style={{ width: `${displayedVotes[2]}%` }} /></div>
-            <div className="vote-values" aria-hidden="true"><b>{displayedVotes[0]}%</b><b>{displayedVotes[1]}%</b><b>{displayedVotes[2]}%</b></div>
+            <div className="vote-values" aria-hidden="true">
+              {displayedVotes.map((value, index) => <b key={index} style={{ flexBasis: `${value}%` }}>{value}%</b>)}
+            </div>
           </div>
           <button className="next-build-button" type="button" onClick={onNext}>Следующий билд <span aria-hidden="true">→</span></button>
         </aside>
