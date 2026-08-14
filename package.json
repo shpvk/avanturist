@@ -1,6 +1,7 @@
 {
   "name": "build-verdict",
   "private": true,
+  "packageManager": "npm@11.12.1",
   "scripts": {
     "frontend:dev": "npm --prefix apps/frontend run dev",
     "frontend:build": "npm --prefix apps/frontend run build",

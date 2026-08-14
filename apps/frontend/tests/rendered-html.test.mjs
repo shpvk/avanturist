@@ -17,12 +17,16 @@ test("server-renders the BuildVerdict homepage", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
 
   const html = await response.text();
   assert.match(html, /<html lang="ru" data-theme="dark">/i);
   assert.match(html, /<title>BuildVerdict — оцени билды Dota 2<\/title>/i);
   assert.doesNotMatch(html, /Поиск билдов и героев/);
   assert.match(html, /Добавить билд/);
+  assert.match(html, /href="\/signin-with-chatgpt\?return_to=%2F"/);
+  assert.doesNotMatch(html, /type="password"|Продолжить с Google/);
   assert.match(html, /Anti-Mage/);
   assert.match(html, /Случайный билд/);
   assert.match(html, /Все билды/);
@@ -31,6 +35,8 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, />0 комментариев</);
   assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
   assert.match(html, /Ситуативно/);
+  assert.match(html, /alt="Bloodstone"/);
+  assert.match(html, /aria-label="Лайк 82%, ситуативно 12%, дизлайк 6%"/);
   assert.doesNotMatch(html, /Комментарий автора|Комментарий под билдом/);
   assert.match(html, /aria-label="Включить светлую тему"/);
   assert.match(html, /class="theme-icon"/);
@@ -44,8 +50,9 @@ test("renders one random build with three vote actions", async () => {
   const response = await render();
   const html = await response.text();
   assert.equal((html.match(/class="random-card dota-stage"/g) ?? []).length, 1);
-  assert.match(html, /class="hero-viewer loading"/);
-  assert.match(html, /\/assets\/heroes\/renders\/antimage\.png/);
+  assert.match(html, /class="hero-viewer idle"/);
+  assert.match(html, /\/assets\/heroes\/renders\/antimage\.webp/);
+  assert.match(html, /Включить 3D/);
   assert.match(html, /class="item-row inventory"/);
   assert.doesNotMatch(html, /class="brand"|class="hero-nameplate"/);
   assert.equal((html.match(/class="rating-button /g) ?? []).length, 3);
