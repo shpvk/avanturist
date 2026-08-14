@@ -286,6 +286,12 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
     setCommentDraft("");
   };
 
+  // A vote counts immediately and hands the reader the next build — no confirmation step.
+  const handleVote = (value: Vote) => {
+    onVote(value);
+    onNext();
+  };
+
   return (
     <main className="random-main">
       <h1 className="sr-only">Случайный билд: {build.hero} — {build.title}</h1>
@@ -297,15 +303,16 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
               <Image src={build.heroImage} alt="" width={256} height={144} unoptimized />
               <div><span className={`role-badge ${build.roleClass}`}>{build.role}</span><h2>{build.hero}</h2></div>
             </div>
-            <button className="shuffle-button" type="button" onClick={onNext}><span aria-hidden="true">↻</span> Другой билд</button>
+            <div className="dota-panel-meta">
+              <div className="dota-panel-author">
+                <Author build={build} />
+                <time className="random-build-date" dateTime={build.dateTime}>{build.date}</time>
+              </div>
+              <button className="shuffle-button" type="button" onClick={onNext}><span aria-hidden="true">↻</span> Другой билд</button>
+            </div>
           </div>
           <h3 className="dota-build-title">{build.title}</h3>
           <div className="dota-inventory"><span className="section-label">Предметы</span><ItemIcons items={build.items} inventory /></div>
-          <div className="random-author">
-            <Author build={build} />
-            <time className="random-build-date" dateTime={build.dateTime}>{build.date}</time>
-          </div>
-
           <section className="build-comments" aria-label="Комментарии к билду">
             <div className="build-comments-head">
               <span className="section-label">Комментарии</span>
@@ -337,10 +344,9 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
         </div>
 
         <aside className="rating-panel">
-          <div className="rating-copy"><h2>{vote ? "Спасибо за голос" : "Оценить билд"}</h2></div>
           <div className="rating-actions">
             {voteOptions.map((option) => (
-              <button key={option.value} className={`rating-button ${option.value}${vote === option.value ? " selected" : ""}`} type="button" aria-pressed={vote === option.value} onClick={() => onVote(option.value)}>
+              <button key={option.value} className={`rating-button ${option.value}${vote === option.value ? " selected" : ""}`} type="button" aria-pressed={vote === option.value} onClick={() => handleVote(option.value)}>
                 <span className="rating-icon" aria-hidden="true">{option.icon}</span><span><strong>{option.label}</strong><small>{option.hint}</small></span>
               </button>
             ))}
@@ -350,7 +356,7 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
             <div className="vote-bar" role="img" aria-label={`Лайк ${displayedVotes[0]}%, ситуативно ${displayedVotes[1]}%, дизлайк ${displayedVotes[2]}%`}><i className="positive" style={{ width: `${displayedVotes[0]}%` }} /><i className="uncertain" style={{ width: `${displayedVotes[1]}%` }} /><i className="negative" style={{ width: `${displayedVotes[2]}%` }} /></div>
             <div className="vote-values" aria-hidden="true"><b>{displayedVotes[0]}%</b><b>{displayedVotes[1]}%</b><b>{displayedVotes[2]}%</b></div>
           </div>
-          {vote && <button className="next-build-button" type="button" onClick={onNext}>Следующий билд <span aria-hidden="true">→</span></button>}
+          <button className="next-build-button" type="button" onClick={onNext}>Следующий билд <span aria-hidden="true">→</span></button>
         </aside>
       </article>
     </main>

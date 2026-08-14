@@ -30,7 +30,8 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /Anti-Mage/);
   assert.match(html, /Случайный билд/);
   assert.match(html, /Все билды/);
-  assert.doesNotMatch(html, /Как тебе эта сборка/);
+  assert.doesNotMatch(html, /Как тебе эта сборка|Оценить билд|Спасибо за голос/);
+  assert.match(html, /Следующий билд/);
   assert.doesNotMatch(html, /Написать комментарий/);
   assert.match(html, /placeholder="Что думаете об этой сборке\?"/);
   assert.match(html, /3 комментария</);
