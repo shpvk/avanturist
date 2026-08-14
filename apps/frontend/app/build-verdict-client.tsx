@@ -17,6 +17,14 @@ type AuthUser = {
   email: string;
 };
 
+type BuildComment = {
+  id: string;
+  author: string;
+  avatar: string;
+  date: string;
+  text: string;
+};
+
 type Build = {
   id: string;
   hero: string;
@@ -31,7 +39,7 @@ type Build = {
   verdict: string;
   verdictType: string;
   votes: [number, number, number];
-  comments: number;
+  comments: BuildComment[];
   date: string;
   dateTime: string;
 };
@@ -42,35 +50,57 @@ const initialBuilds: Build[] = [
     role: "Керри", roleClass: "carry",
     items: ["bloodstone", "kaya", "yasha_and_kaya", "arcane_blink", "butterfly", "moon_shard"],
     author: "SilentStep", avatar: "/assets/heroes/community-avatar.webp", reputation: "1 245",
-    verdict: "Рекомендуется", verdictType: "recommended", votes: [82, 12, 6], comments: 0, date: "20 мая 2024", dateTime: "2024-05-20",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [82, 12, 6], date: "20 мая 2024", dateTime: "2024-05-20",
+    comments: [
+      { id: "am-c1", author: "MidOrFeed", avatar: "/assets/heroes/leshrac.png", date: "20 мая", text: "Каю на антимаге не воспринимал всерьёз, но с бладстоуном мана правда не кончается. В затяжных играх работает." },
+      { id: "am-c2", author: "TotemPower", avatar: "/assets/heroes/shadow_shaman.png", date: "21 мая", text: "Против керри с чистым уроном разваливается моментально. Только если враг весь физический." },
+      { id: "am-c3", author: "d3str0yer", avatar: "/assets/heroes/bloodseeker.png", date: "22 мая", text: "Муншард последним предметом — обязателен, иначе дпс проседает после 35 минуты." },
+    ],
   },
   {
     id: "phantom-assassin-critical", hero: "Phantom Assassin", heroImage: "/assets/heroes/phantom_assassin.png", title: "Броня вместо уклонения",
     role: "Керри", roleClass: "carry",
     items: ["blade_mail", "heart", "bloodstone", "pipe", "overwhelming_blink", "lotus_orb"],
     author: "d3str0yer", avatar: "/assets/heroes/bloodseeker.png", reputation: "980",
-    verdict: "Рекомендуется", verdictType: "recommended", votes: [76, 16, 8], comments: 0, date: "19 мая 2024", dateTime: "2024-05-19",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [76, 16, 8], date: "19 мая 2024", dateTime: "2024-05-19",
+    comments: [
+      { id: "pa-c1", author: "SilentStep", avatar: "/assets/heroes/community-avatar.webp", date: "19 мая", text: "Танковая ФА звучит как троллинг, но блейдмейл с блюром реально возвращает половину урона. Забавно работает." },
+      { id: "pa-c2", author: "HookMaster", avatar: "/assets/heroes/spirit_breaker.png", date: "20 мая", text: "Не хватает хотя бы одного предмета на урон, иначе крит нечем реализовывать." },
+    ],
   },
   {
     id: "pudge-tank", hero: "Pudge", heroImage: "/assets/heroes/pudge.png", title: "Пудж через скорость атаки",
     role: "Оффлейн", roleClass: "offlane",
     items: ["manta", "butterfly", "moon_shard", "daedalus", "satanic", "overwhelming_blink"],
     author: "HookMaster", avatar: "/assets/heroes/spirit_breaker.png", reputation: "2 310",
-    verdict: "Рекомендуется", verdictType: "recommended", votes: [69, 20, 11], comments: 0, date: "18 мая 2024", dateTime: "2024-05-18",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [69, 20, 11], date: "18 мая 2024", dateTime: "2024-05-18",
+    comments: [
+      { id: "pudge-c1", author: "ArcWardenX", avatar: "/assets/heroes/enigma.png", date: "18 мая", text: "Манта на пудже — это чистое веселье, иллюзии тянут крипов, пока ты ищешь крюк." },
+      { id: "pudge-c2", author: "MidOrFeed", avatar: "/assets/heroes/leshrac.png", date: "19 мая", text: "Сатаник обязателен, иначе умираешь раньше, чем успеваешь докрутить скорость атаки." },
+      { id: "pudge-c3", author: "TotemPower", avatar: "/assets/heroes/shadow_shaman.png", date: "19 мая", text: "Сыграл три катки — два раза сработало, один раз кормил всю игру. Ситуативно." },
+    ],
   },
   {
     id: "shadow-shaman-push", hero: "Shadow Shaman", heroImage: "/assets/heroes/shadow_shaman.png", title: "Шаман с руки",
     role: "Саппорт", roleClass: "support",
     items: ["mask_of_madness", "desolator", "manta", "butterfly", "daedalus", "arcane_blink"],
     author: "TotemPower", avatar: "/assets/heroes/shadow_shaman.png", reputation: "760",
-    verdict: "Рекомендуется", verdictType: "recommended", votes: [74, 18, 8], comments: 0, date: "17 мая 2024", dateTime: "2024-05-17",
+    verdict: "Рекомендуется", verdictType: "recommended", votes: [74, 18, 8], date: "17 мая 2024", dateTime: "2024-05-17",
+    comments: [
+      { id: "ss-c1", author: "d3str0yer", avatar: "/assets/heroes/bloodseeker.png", date: "17 мая", text: "Шаман с руки выглядит абсурдно, но маска безумия и десолятор превращают его в керри на 20 минуте." },
+      { id: "ss-c2", author: "SilentStep", avatar: "/assets/heroes/community-avatar.webp", date: "18 мая", text: "Нужен второй саппорт в команде, иначе вардов на карте не будет вообще." },
+    ],
   },
   {
     id: "leshrac-zones", hero: "Leshrac", heroImage: "/assets/heroes/leshrac.png", title: "Физический Лешрак",
     role: "Мид", roleClass: "mid",
     items: ["shadow_blade", "daedalus", "butterfly", "moon_shard", "satanic", "overwhelming_blink"],
     author: "ArcWardenX", avatar: "/assets/heroes/enigma.png", reputation: "1 530",
-    verdict: "Нейтрально", verdictType: "neutral", votes: [46, 34, 20], comments: 0, date: "16 мая 2024", dateTime: "2024-05-16",
+    verdict: "Нейтрально", verdictType: "neutral", votes: [46, 34, 20], date: "16 мая 2024", dateTime: "2024-05-16",
+    comments: [
+      { id: "lesh-c1", author: "HookMaster", avatar: "/assets/heroes/spirit_breaker.png", date: "16 мая", text: "Физический Лешрак работает только пока враги не купили армор. Дальше — боль." },
+      { id: "lesh-c2", author: "ArcWardenX", avatar: "/assets/heroes/enigma.png", date: "17 мая", text: "Шэдоу блейд для инициации — топ, но бабочку я бы поменял на что-то с уроном." },
+    ],
   },
 ];
 
@@ -185,7 +215,7 @@ function BuildCard({ build, index, onOpen }: { build: Build; index: number; onOp
         <span>Распределение голосов</span><div className="vote-bar" role="img" aria-label={`Лайк ${build.votes[0]}%, ситуативно ${build.votes[1]}%, дизлайк ${build.votes[2]}%`}><i className="positive" style={{ width: `${build.votes[0]}%` }} /><i className="uncertain" style={{ width: `${build.votes[1]}%` }} /><i className="negative" style={{ width: `${build.votes[2]}%` }} /></div><div className="vote-values" aria-hidden="true"><b>{build.votes[0]}%</b><b>{build.votes[1]}%</b><b>{build.votes[2]}%</b></div>
       </div>
       <div className="card-meta">
-        <div className="card-meta-copy"><span className="comments" aria-label={commentsLabel(build.comments)}><i aria-hidden="true">•••</i><span aria-hidden="true">{build.comments}</span></span><time dateTime={build.dateTime}>{build.date}</time></div>
+        <div className="card-meta-copy"><span className="comments" aria-label={commentsLabel(build.comments.length)}><i aria-hidden="true">•••</i><span aria-hidden="true">{build.comments.length}</span></span><time dateTime={build.dateTime}>{build.date}</time></div>
         <button className="card-open-button" type="button" onClick={onOpen}>Открыть билд <span aria-hidden="true">→</span></button>
       </div>
     </article>
@@ -227,9 +257,8 @@ function Header({ view, theme, user, onViewChange, onThemeToggle, onAddBuild }: 
 }
 
 function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote | null; onVote: (vote: Vote) => void; onNext: () => void }) {
-  const [commentingBuildId, setCommentingBuildId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
-  const [localComments, setLocalComments] = useState<Record<string, Array<{ id: string; text: string }>>>({});
+  const [localComments, setLocalComments] = useState<Record<string, BuildComment[]>>({});
   const displayedVotes = useMemo(() => {
     if (!vote) return build.votes;
     const values = [...build.votes] as [number, number, number];
@@ -238,8 +267,7 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
     return values.map((value) => Math.round((value / total) * 100)) as [number, number, number];
   }, [build, vote]);
   const heroAssetName = build.heroImage.split("/").at(-1)?.replace(/\.png$/, "") ?? "antimage";
-  const buildComments = localComments[build.id] ?? [];
-  const isCommenting = commentingBuildId === build.id;
+  const buildComments = [...build.comments, ...(localComments[build.id] ?? [])];
 
   const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -247,10 +275,12 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
     if (!text) return;
     setLocalComments((current) => ({
       ...current,
-      [build.id]: [...(current[build.id] ?? []), { id: `${build.id}-${Date.now()}`, text }],
+      [build.id]: [
+        ...(current[build.id] ?? []),
+        { id: `${build.id}-${Date.now()}`, author: "Вы", avatar: "/assets/heroes/community-avatar.webp", date: "только что", text },
+      ],
     }));
     setCommentDraft("");
-    setCommentingBuildId(null);
   };
 
   return (
@@ -270,23 +300,32 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
           <div className="dota-inventory"><span className="section-label">Предметы</span><ItemIcons items={build.items} inventory /></div>
           <div className="random-author">
             <Author build={build} />
-            <div className="random-author-meta">
-              <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(build.comments + buildComments.length)}</span>
-              <button className="comment-trigger" type="button" aria-expanded={isCommenting} aria-controls={`comment-form-${build.id}`} onClick={() => { setCommentDraft(""); setCommentingBuildId(isCommenting ? null : build.id); }}>Написать комментарий</button>
-            </div>
+            <time className="random-build-date" dateTime={build.dateTime}>{build.date}</time>
           </div>
-          {isCommenting && (
-            <form id={`comment-form-${build.id}`} className="comment-composer" onSubmit={handleCommentSubmit}>
-              <label className="sr-only" htmlFor={`comment-${build.id}`}>Комментарий к билду</label>
-              <textarea id={`comment-${build.id}`} value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} maxLength={500} rows={3} placeholder="Что думаете об этой сборке?" required />
-              <div className="comment-composer-footer"><span>{commentDraft.length}/500</span><button type="button" onClick={() => { setCommentDraft(""); setCommentingBuildId(null); }}>Отмена</button><button type="submit" disabled={!commentDraft.trim()}>Опубликовать</button></div>
-            </form>
-          )}
-          {buildComments.length > 0 && (
-            <div className="local-comments" aria-live="polite">
-              {buildComments.map((comment) => <div className="local-comment" key={comment.id}><strong>Вы</strong><p>{comment.text}</p></div>)}
+
+          <section className="build-comments" aria-label="Комментарии к билду">
+            <div className="build-comments-head">
+              <span className="section-label">Комментарии</span>
+              <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(buildComments.length)}</span>
             </div>
-          )}
+            <ol className="comment-list" aria-live="polite">
+              {buildComments.map((comment) => (
+                <li className="comment-item" key={comment.id}>
+                  <Image src={comment.avatar} alt="" width={36} height={36} loading="lazy" unoptimized />
+                  <div>
+                    <div className="comment-item-head"><strong>{comment.author}</strong><span>{comment.date}</span></div>
+                    <p>{comment.text}</p>
+                  </div>
+                </li>
+              ))}
+              {buildComments.length === 0 && <li className="comment-empty">Комментариев пока нет — напишите первый.</li>}
+            </ol>
+            <form className="comment-composer" onSubmit={handleCommentSubmit}>
+              <label className="sr-only" htmlFor={`comment-${build.id}`}>Комментарий к билду</label>
+              <textarea id={`comment-${build.id}`} value={commentDraft} onChange={(event) => setCommentDraft(event.target.value)} maxLength={500} rows={2} placeholder="Что думаете об этой сборке?" />
+              <div className="comment-composer-footer"><span>{commentDraft.length}/500</span><button type="submit" disabled={!commentDraft.trim()}>Отправить</button></div>
+            </form>
+          </section>
         </div>
 
         <div className="hero-showcase">
@@ -394,7 +433,7 @@ function AddBuildDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: 
       verdict: "Нет оценок",
       verdictType: "neutral",
       votes: [0, 0, 0],
-      comments: 0,
+      comments: [],
       date: "сегодня",
       dateTime: new Date().toISOString().slice(0, 10),
     });
@@ -504,7 +543,7 @@ export default function BuildVerdictClient({ initialUser = null }: { initialUser
   return (
     <div className="site-shell">
       <Header view={view} theme={theme} user={initialUser} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
-      {view === "random" ? <RandomBuild build={builds[randomIndex]} vote={vote} onVote={setVote} onNext={showNextBuild} /> : <AllBuilds builds={builds} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} onOpenBuild={openBuild} />}
+      {view === "random" ? <RandomBuild key={builds[randomIndex].id} build={builds[randomIndex]} vote={vote} onVote={setVote} onNext={showNextBuild} /> : <AllBuilds builds={builds} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} onOpenBuild={openBuild} />}
       {isAddBuildOpen && <AddBuildDialog onClose={() => setIsAddBuildOpen(false)} onSubmit={addBuild} />}
     </div>
   );
