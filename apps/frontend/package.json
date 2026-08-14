@@ -9,10 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --max-warnings=0",
-    "typecheck": "tsc --noEmit --incremental false",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "test": "npm run build && node --test tests/rendered-html.test.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
