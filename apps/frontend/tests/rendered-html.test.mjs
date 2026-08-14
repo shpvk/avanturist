@@ -31,9 +31,12 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /Случайный билд/);
   assert.match(html, /Все билды/);
   assert.doesNotMatch(html, /Как тебе эта сборка/);
-  assert.match(html, /Комментарии/);
-  assert.match(html, />3 комментария</);
-  assert.match(html, /MidOrFeed/);
+  assert.doesNotMatch(html, /Написать комментарий/);
+  assert.match(html, /placeholder="Что думаете об этой сборке\?"/);
+  assert.match(html, /3 комментария</);
+  assert.match(html, /class="comment-item"/);
+  assert.match(html, /Муншард последним предметом/);
+  assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
   assert.match(html, /Ситуативно/);
   assert.match(html, /alt="Bloodstone"/);
   assert.match(html, /aria-label="Лайк 82%, ситуативно 12%, дизлайк 6%"/);

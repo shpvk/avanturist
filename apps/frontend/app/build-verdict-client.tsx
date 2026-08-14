@@ -257,7 +257,7 @@ function Header({ view, theme, user, onViewChange, onThemeToggle, onAddBuild }: 
 }
 
 function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote | null; onVote: (vote: Vote) => void; onNext: () => void }) {
-  const [commentDraft, setCommentDraft] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [localComments, setLocalComments] = useState<Record<string, BuildComment[]>>({});
   const displayedVotes = useMemo(() => {
     if (!vote) return build.votes;
@@ -268,6 +268,9 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
   }, [build, vote]);
   const heroAssetName = build.heroImage.split("/").at(-1)?.replace(/\.png$/, "") ?? "antimage";
   const buildComments = [...build.comments, ...(localComments[build.id] ?? [])];
+  // Drafts are kept per build so switching builds shows that build's own unsent text.
+  const commentDraft = drafts[build.id] ?? "";
+  const setCommentDraft = (value: string) => setDrafts((current) => ({ ...current, [build.id]: value }));
 
   const handleCommentSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -543,7 +546,7 @@ export default function BuildVerdictClient({ initialUser = null }: { initialUser
   return (
     <div className="site-shell">
       <Header view={view} theme={theme} user={initialUser} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
-      {view === "random" ? <RandomBuild key={builds[randomIndex].id} build={builds[randomIndex]} vote={vote} onVote={setVote} onNext={showNextBuild} /> : <AllBuilds builds={builds} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} onOpenBuild={openBuild} />}
+      {view === "random" ? <RandomBuild build={builds[randomIndex]} vote={vote} onVote={setVote} onNext={showNextBuild} /> : <AllBuilds builds={builds} heroSearch={heroSearch} onHeroSearchChange={setHeroSearch} onOpenBuild={openBuild} />}
       {isAddBuildOpen && <AddBuildDialog onClose={() => setIsAddBuildOpen(false)} onSubmit={addBuild} />}
     </div>
   );
