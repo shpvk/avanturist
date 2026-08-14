@@ -50,9 +50,10 @@ test("renders one random build with three vote actions", async () => {
   const response = await render();
   const html = await response.text();
   assert.equal((html.match(/class="random-card dota-stage"/g) ?? []).length, 1);
-  assert.match(html, /class="hero-viewer idle"/);
+  assert.match(html, /class="hero-viewer loading"/);
   assert.match(html, /\/assets\/heroes\/renders\/antimage\.webp/);
-  assert.match(html, /Включить 3D/);
+  assert.doesNotMatch(html, /Включить 3D/);
+  assert.match(html, /Загружаем 3D-модель/);
   assert.match(html, /class="item-row inventory"/);
   assert.doesNotMatch(html, /class="brand"|class="hero-nameplate"/);
   assert.equal((html.match(/class="rating-button /g) ?? []).length, 3);

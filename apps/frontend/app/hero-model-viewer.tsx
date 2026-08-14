@@ -3,16 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
-type ViewerStatus = "idle" | "loading" | "ready" | "fallback";
+type ViewerStatus = "loading" | "ready" | "fallback";
 
 export default function HeroModelViewer({ hero, slug }: { hero: string; slug: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<ViewerStatus>("idle");
-  const [activated, setActivated] = useState(false);
+  const [status, setStatus] = useState<ViewerStatus>("loading");
   const poster = `/assets/heroes/renders/${slug}.webp`;
 
   useEffect(() => {
-    if (!activated) return;
     const host = hostRef.current;
     if (!host) return;
 
@@ -64,7 +62,6 @@ export default function HeroModelViewer({ hero, slug }: { hero: string; slug: st
       controls.maxPolarAngle = Math.PI * 0.92;
 
       const render = () => {
-        controls.update();
         renderer.render(scene, camera);
       };
 
@@ -147,6 +144,7 @@ export default function HeroModelViewer({ hero, slug }: { hero: string; slug: st
         else if (event.key === "ArrowDown") controls.rotateUp(-step);
         else return;
         event.preventDefault();
+        controls.update();
         render();
       };
       const handleContextLost = (event: Event) => {
@@ -180,7 +178,7 @@ export default function HeroModelViewer({ hero, slug }: { hero: string; slug: st
       abortController.abort();
       cleanup();
     };
-  }, [activated, hero, slug]);
+  }, [hero, slug]);
 
   return (
     <div className={`hero-viewer ${status}`} aria-label={`Интерактивная 3D-модель героя ${hero}`}>
@@ -188,7 +186,6 @@ export default function HeroModelViewer({ hero, slug }: { hero: string; slug: st
       {status !== "ready" && (
         <Image className="hero-model hero-model-poster" src={poster} alt={hero} width={1080} height={1080} priority unoptimized />
       )}
-      {status === "idle" && <button className="model-activate-button" type="button" onClick={() => { setStatus("loading"); setActivated(true); }}><span aria-hidden="true">◫</span> Включить 3D</button>}
       {status === "loading" && <span className="hero-model-loading" role="status">Загружаем 3D-модель…</span>}
       {status === "fallback" && <span className="hero-model-loading" role="status">3D недоступно — показываем постер</span>}
       <span id={`hero-model-help-${slug}`} className="sr-only">Перетаскивайте модель мышью или используйте клавиши со стрелками. Прокрутка страницы остаётся доступной.</span>

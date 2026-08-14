@@ -184,7 +184,10 @@ function BuildCard({ build, index, onOpen }: { build: Build; index: number; onOp
       <div className="votes-section">
         <span>Распределение голосов</span><div className="vote-bar" role="img" aria-label={`Лайк ${build.votes[0]}%, ситуативно ${build.votes[1]}%, дизлайк ${build.votes[2]}%`}><i className="positive" style={{ width: `${build.votes[0]}%` }} /><i className="uncertain" style={{ width: `${build.votes[1]}%` }} /><i className="negative" style={{ width: `${build.votes[2]}%` }} /></div><div className="vote-values" aria-hidden="true"><b>{build.votes[0]}%</b><b>{build.votes[1]}%</b><b>{build.votes[2]}%</b></div>
       </div>
-      <div className="card-meta"><span className="comments" aria-label={commentsLabel(build.comments)}><i aria-hidden="true">•••</i><span aria-hidden="true">{build.comments}</span></span><time dateTime={build.dateTime}>{build.date}</time></div>
+      <div className="card-meta">
+        <div className="card-meta-copy"><span className="comments" aria-label={commentsLabel(build.comments)}><i aria-hidden="true">•••</i><span aria-hidden="true">{build.comments}</span></span><time dateTime={build.dateTime}>{build.date}</time></div>
+        <button className="card-open-button" type="button" onClick={onOpen}>Открыть билд <span aria-hidden="true">→</span></button>
+      </div>
     </article>
   );
 }
@@ -252,16 +255,16 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
 
   return (
     <main className="random-main">
-      <section className="random-heading">
-        <h1 className="sr-only">Случайный билд: {build.hero} — {build.title}</h1>
-        <button className="shuffle-button" type="button" onClick={onNext}><span aria-hidden="true">↻</span> Другой билд</button>
-      </section>
+      <h1 className="sr-only">Случайный билд: {build.hero} — {build.title}</h1>
 
       <article className="random-card dota-stage">
         <div className="dota-build-panel">
-          <div className="dota-hero-identity">
-            <Image src={build.heroImage} alt="" width={256} height={144} unoptimized />
-            <div><span className={`role-badge ${build.roleClass}`}>{build.role}</span><h2>{build.hero}</h2></div>
+          <div className="dota-panel-header">
+            <div className="dota-hero-identity">
+              <Image src={build.heroImage} alt="" width={256} height={144} unoptimized />
+              <div><span className={`role-badge ${build.roleClass}`}>{build.role}</span><h2>{build.hero}</h2></div>
+            </div>
+            <button className="shuffle-button" type="button" onClick={onNext}><span aria-hidden="true">↻</span> Другой билд</button>
           </div>
           <h3 className="dota-build-title">{build.title}</h3>
           <div className="dota-inventory"><span className="section-label">Предметы</span><ItemIcons items={build.items} inventory /></div>
