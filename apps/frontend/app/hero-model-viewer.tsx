@@ -129,7 +129,9 @@ export default function HeroModelViewer({ hero, slug }: { hero: string; slug: st
 
       camera.near = extent / 100;
       camera.far = extent * 100;
-      camera.position.set(extent * 0.72, extent * 0.16, extent * 1.55);
+      // Frame the whole model with margin: at a 32° vertical fov the full extent needs
+      // ~1.75x distance, so start further back instead of cropping the head and feet.
+      camera.position.set(extent * 0.78, extent * 0.14, extent * 2.15);
       camera.updateProjectionMatrix();
       controls.target.set(0, 0, 0);
       controls.minDistance = extent * 0.72;
