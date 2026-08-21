@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs"
+    "test": "npm run build && node --test tests/lib.test.mjs tests/hero-wheel.test.mjs tests/rendered-html.test.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
