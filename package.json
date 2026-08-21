@@ -2,12 +2,54 @@
   "name": "build-verdict",
   "private": true,
   "scripts": {
+    "test": "jest",
     "frontend": "pnpm --dir apps/frontend dev",
     "frontend:build": "pnpm --dir apps/frontend build",
-    "backend": "pnpm --dir apps/backend/core dev",
-    "backend:build": "pnpm --dir apps/backend/core build"
+    "backend": "nest start --watch",
+    "backend:build": "nest build",
+    "backend:start": "node apps/backend/dist/main.js",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down"
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "29.4",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shpvk/avanturist.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/shpvk/avanturist/issues"
+  },
+  "homepage": "https://github.com/shpvk/avanturist#readme",
+  "dependencies": {
+    "@nestjs/common": "^11.2.1",
+    "@nestjs/core": "^11.2.1",
+    "@nestjs/platform-express": "^11.2.1",
+    "@nestjs/typeorm": "^11.0.3",
+    "@types/node": "^26.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "pg": "^8.23.0",
+    "postgres": "^3.4.9",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^1.1.0"
   }
 }
