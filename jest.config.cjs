@@ -2,9 +2,9 @@
 module.exports = {
   testEnvironment: 'node',
   passWithNoTests: true,
-  // Бэкенд-тесты на TypeScript. Фронтенд использует свой раннер (apps/frontend: npm test).
+  // Бэкенд-тесты на TypeScript. Фронтенд использует свой раннер (npm run frontend:test).
   roots: ['<rootDir>/apps/backend'],
-  testMatch: ['**/*.test.ts'],
+  testMatch: ['**/*.test.ts', '**/*.spec.ts'],
   transform: {
     '^.+\.tsx?$': [
       'ts-jest',
@@ -13,6 +13,7 @@ module.exports = {
           target: 'ES2022',
           module: 'CommonJS',
           esModuleInterop: true,
+          types: ['jest', 'node'],
           experimentalDecorators: true,
           emitDecoratorMetadata: true,
         },
