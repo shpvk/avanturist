@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { HeroesService } from '../heroes/heroes.service';
 import { BuildEntity } from './build.entity';
-import { toBuildView, type BuildView } from './build.view';
 import { CreateBuildDto } from './dto/create-build.dto';
 
 const RELATIONS = { votes: true, comments: true } as const;
@@ -16,7 +15,7 @@ export class BuildsService {
         private readonly heroes: HeroesService,
     ) {}
 
-    async create(dto: CreateBuildDto): Promise<BuildView> {
+    async create(dto: CreateBuildDto): Promise<BuildEntity> {
         if (!this.heroes.exists(dto.heroId)) {
             throw new BadRequestException(`Unknown hero "${dto.heroId}"`);
         }
@@ -34,37 +33,11 @@ export class BuildsService {
     }
 
     /** Лента всех сборок: по умолчанию от новых к старым. */
-    async findAll(): Promise<BuildView[]> {
-        const builds = await this.builds.find({
-            relations: RELATIONS,
-            order: { createdAt: 'DESC' },
-        });
-
-        return builds.map((build) => this.toView(build));
+    findAll(): Promise<BuildEntity[]> {
+        return this.builds.find({ relations: RELATIONS, order: { createdAt: 'DESC' } });
     }
 
-    async findOne(id: string): Promise<BuildView> {
-        return this.toView(await this.getEntityOrFail(id));
-    }
-
-    /** Главная страница: случайная сборка со случайным героем. */
-    async findRandom(): Promise<BuildView> {
-        const { id } =
-            (await this.builds
-                .createQueryBuilder('build')
-                .select('build.id', 'id')
-                .orderBy('RANDOM()')
-                .limit(1)
-                .getRawOne<{ id: string }>()) ?? {};
-
-        if (!id) {
-            throw new NotFoundException('No builds published yet');
-        }
-
-        return this.findOne(id);
-    }
-
-    async getEntityOrFail(id: string): Promise<BuildEntity> {
+    async findOne(id: string): Promise<BuildEntity> {
         const build = await this.builds.findOne({ where: { id }, relations: RELATIONS });
 
         if (!build) {
@@ -74,7 +47,19 @@ export class BuildsService {
         return build;
     }
 
-    private toView(build: BuildEntity): BuildView {
-        return toBuildView(build, this.heroes.findOne(build.heroId));
+    /** Главная страница: случайная сборка со случайным героем. */
+    async findRandom(): Promise<BuildEntity> {
+        const row = await this.builds
+            .createQueryBuilder('build')
+            .select('build.id', 'id')
+            .orderBy('RANDOM()')
+            .limit(1)
+            .getRawOne<{ id: string }>();
+
+        if (!row) {
+            throw new NotFoundException('No builds published yet');
+        }
+
+        return this.findOne(row.id);
     }
 }

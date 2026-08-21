@@ -1,5 +1,5 @@
 import { Body, Controller, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { type BuildView } from '../builds/build.view';
+import { BuildEntity } from '../builds/build.entity';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VotesService } from './votes.service';
 
@@ -11,7 +11,7 @@ export class VotesController {
     vote(
         @Param('buildId', ParseUUIDPipe) buildId: string,
         @Body() dto: CreateVoteDto,
-    ): Promise<BuildView> {
+    ): Promise<BuildEntity> {
         return this.votesService.vote(buildId, dto);
     }
 }

@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
     Column,
     CreateDateColumn,
@@ -28,6 +29,7 @@ export class VoteEntity {
     verdict!: Verdict;
 
     /** Анонимный идентификатор голосующего до появления авторизации. */
+    @Exclude()
     @Column({ name: 'voter_key', type: 'varchar', length: 64 })
     voterKey!: string;
 
