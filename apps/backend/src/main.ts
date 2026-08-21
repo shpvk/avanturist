@@ -1,16 +1,8 @@
 import 'reflect-metadata';
-import { resolve } from 'node:path';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-
-function loadRootEnv(): void {
-  try {
-    process.loadEnvFile(resolve(__dirname, '../../../.env'));
-  } catch {
-    // .env is optional: defaults below keep the app runnable.
-  }
-}
+import { loadRootEnv } from './load-env';
 
 async function bootstrap(): Promise<void> {
   loadRootEnv();

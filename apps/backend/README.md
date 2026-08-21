@@ -7,11 +7,16 @@ NestJS + TypeORM + PostgreSQL. Минимальный скелет под осн
 
 ```bash
 npm run db:up          # postgres в docker (порт из .env, по умолчанию 5430)
-npm run backend        # nest start --watch -> http://localhost:3001/api
+npm run db:seed        # наполнить базу примерами (перезаписывает таблицы)
+npm run dev            # бэкенд и фронтенд одной командой
+npm run backend        # только бэкенд: nest start --watch -> http://localhost:3001/api
 npm run backend:build  # nest build -> apps/backend/dist
 npm run backend:start  # запуск собранной версии
-npm test               # jest, только apps/backend
+npm run backend:test   # jest: *.test.ts и *.spec.ts в apps/backend
 ```
+
+Скрипты в корне парные: `dev`, `build`, `start`, `test` запускают оба приложения,
+а `backend:*` и `frontend:*` — по отдельности.
 
 Переменные окружения — в корневом `.env` (шаблон: `.env.example`).
 Схема БД в MVP создаётся из сущностей (`synchronize: true`), миграций пока нет.
@@ -22,6 +27,7 @@ npm test               # jest, только apps/backend
 src/
   main.ts              точка входа: префикс /api, CORS, глобальная валидация
   app.module.ts        подключение TypeORM и доменных модулей
+  database/            конфиг подключения и наполнение базы примерами
   heroes/              каталог героев (статичный список под ассеты фронтенда)
   builds/              сборки: сущность, DTO, сервис, контроллер
   votes/               оценки: positive | situational | negative
