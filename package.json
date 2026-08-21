@@ -2,14 +2,18 @@
   "name": "build-verdict",
   "private": true,
   "scripts": {
-    "test": "jest",
-    "frontend": "pnpm --dir apps/frontend dev",
-    "frontend:build": "pnpm --dir apps/frontend build",
+    "test": "npm run backend:test && npm run frontend:test",
     "backend": "nest start --watch",
     "backend:build": "nest build",
     "backend:start": "node apps/backend/dist/main.js",
+    "backend:test": "jest",
+    "frontend": "npm --prefix apps/frontend run dev",
+    "frontend:build": "npm --prefix apps/frontend run build",
+    "frontend:start": "npm --prefix apps/frontend run start",
+    "frontend:test": "npm --prefix apps/frontend run test",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "db:seed": "npm run backend:build && node apps/backend/dist/database/seed.js"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -20,7 +24,9 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.24",
     "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.2.1",
     "@types/jest": "^30.0.0",
+    "concurrently": "^10.0.5",
     "jest": "^30.4.2",
     "ts-jest": "29.4",
     "tsx": "^4.23.12",
