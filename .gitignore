@@ -1,6 +1,5 @@
 # Local AI/tooling configuration
 .cloud/
-.claude/
 .codex/
 
 # Environment variables and local secrets
