@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { resolve } from 'node:path';
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 function loadRootEnv(): void {
@@ -19,6 +19,7 @@ async function bootstrap(): Promise<void> {
   app.setGlobalPrefix('api');
   app.enableCors({ origin: process.env.FRONTEND_ORIGIN ?? '*' });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const port = Number(process.env.BACKEND_PORT ?? 3001);
   await app.listen(port);
