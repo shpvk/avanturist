@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 import { BuildsModule } from './builds/builds.module';
 import { CommentsModule } from './comments/comments.module';
 import { HeroesModule } from './heroes/heroes.module';
@@ -22,6 +23,7 @@ import { VotesModule } from './votes/votes.module';
         BuildsModule,
         VotesModule,
         CommentsModule,
+        AuthModule,
     ],
 })
 export class AppModule {}
