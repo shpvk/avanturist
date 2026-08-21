@@ -14,13 +14,13 @@ export class CommentsService {
     ) {}
 
     async findByBuild(buildId: string): Promise<CommentEntity[]> {
-        await this.buildsService.getEntityOrFail(buildId);
+        await this.buildsService.findOne(buildId);
 
         return this.comments.find({ where: { buildId }, order: { createdAt: 'ASC' } });
     }
 
     async create(buildId: string, dto: CreateCommentDto): Promise<CommentEntity> {
-        await this.buildsService.getEntityOrFail(buildId);
+        await this.buildsService.findOne(buildId);
 
         return this.comments.save(
             this.comments.create({ buildId, author: dto.author, text: dto.text }),
