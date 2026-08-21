@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BuildEntity } from '../builds/build.entity';
 import { BuildsService } from '../builds/builds.service';
-import { type BuildView } from '../builds/build.view';
 import { CreateVoteDto } from './dto/create-vote.dto';
 import { VoteEntity } from './vote.entity';
 
@@ -15,8 +15,8 @@ export class VotesService {
     ) {}
 
     /** Повторный голос того же посетителя заменяет предыдущий. */
-    async vote(buildId: string, dto: CreateVoteDto): Promise<BuildView> {
-        await this.buildsService.getEntityOrFail(buildId);
+    async vote(buildId: string, dto: CreateVoteDto): Promise<BuildEntity> {
+        await this.buildsService.findOne(buildId);
 
         const existing = await this.votes.findOne({
             where: { buildId, voterKey: dto.voterKey },
