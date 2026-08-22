@@ -2,195 +2,79 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { getHeroEngine, loadHeroModel, peekHeroEngine, peekHeroModel } from "./hero-model-engine";
 
 type ViewerStatus = "loading" | "ready" | "fallback";
 
+// One automatic rebuild after a lost WebGL context; past that the poster stays.
+const maxRecoveryAttempts = 1;
+
 export default function HeroModelViewer({ hero, slug }: { hero: string; slug: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<ViewerStatus>("loading");
+  // Remounting the viewer (a trip through "Все билды" and back) skips the poster
+  // entirely when the engine and the model are already cached.
+  const [status, setStatus] = useState<ViewerStatus>(() =>
+    peekHeroEngine() && peekHeroModel(slug) ? "ready" : "loading",
+  );
+  const [attempt, setAttempt] = useState(0);
+  const [shownSlug, setShownSlug] = useState(slug);
   const poster = `/assets/heroes/renders/${slug}.webp`;
+
+  // Switching heroes must not flash the poster when the model is already cached,
+  // so the status is adjusted during render instead of in an effect.
+  if (shownSlug !== slug) {
+    setShownSlug(slug);
+    setAttempt(0);
+    setStatus(peekHeroEngine() && peekHeroModel(slug) ? "ready" : "loading");
+  }
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
-    const abortController = new AbortController();
     let disposed = false;
-    let cleanup = () => {};
+    let attached: ReturnType<typeof peekHeroEngine> = null;
 
-    const initialize = async () => {
-      const [THREE, { OrbitControls }, { GLTFLoader }, modelResponse] = await Promise.all([
-        import("three"),
-        import("three/addons/controls/OrbitControls.js"),
-        import("three/addons/loaders/GLTFLoader.js"),
-        fetch(`/assets/heroes/models/${slug}/model.glb`, { signal: abortController.signal }),
-      ]);
-      if (!modelResponse.ok) throw new Error(`Model request failed: ${modelResponse.status}`);
-      const modelData = await modelResponse.arrayBuffer();
+    const handleContextLost = () => {
       if (disposed) return;
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 1000);
-      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35));
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.25;
-      renderer.setClearColor(0x000000, 0);
-      renderer.domElement.className = "hero-model-canvas";
-      renderer.domElement.tabIndex = 0;
-      renderer.domElement.setAttribute("role", "img");
-      renderer.domElement.setAttribute("aria-label", `3D-модель героя ${hero}. Вращайте перетаскиванием или клавишами со стрелками.`);
-      renderer.domElement.setAttribute("aria-describedby", `hero-model-help-${slug}`);
-      host.appendChild(renderer.domElement);
-
-      scene.add(new THREE.HemisphereLight(0xc8e3ff, 0x18231f, 2.4));
-      const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
-      keyLight.position.set(4, 7, 6);
-      scene.add(keyLight);
-      const rimLight = new THREE.DirectionalLight(0x647dff, 2.5);
-      rimLight.position.set(-5, 3, -4);
-      scene.add(rimLight);
-
-      const controls = new OrbitControls(camera, renderer.domElement);
-      renderer.domElement.style.touchAction = "pan-y";
-      controls.enableDamping = false;
-      controls.enablePan = false;
-      controls.enableZoom = false;
-      controls.rotateSpeed = 0.7;
-      controls.minPolarAngle = Math.PI * 0.08;
-      controls.maxPolarAngle = Math.PI * 0.92;
-
-      const render = () => {
-        renderer.render(scene, camera);
-      };
-
-      const resize = () => {
-        const width = Math.max(host.clientWidth, 1);
-        const height = Math.max(host.clientHeight, 1);
-        renderer.setSize(width, height, false);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        render();
-      };
-      const resizeObserver = new ResizeObserver(resize);
-      resizeObserver.observe(host);
-
-      const disposeModel = (target: InstanceType<typeof THREE.Group>) => {
-        const disposedTextures = new Set<InstanceType<typeof THREE.Texture>>();
-        target.traverse((object) => {
-          if (!(object instanceof THREE.Mesh)) return;
-          object.geometry.dispose();
-          const materials = Array.isArray(object.material) ? object.material : [object.material];
-          materials.forEach((material) => {
-            Object.values(material).forEach((value) => {
-              if (!(value instanceof THREE.Texture) || disposedTextures.has(value)) return;
-              disposedTextures.add(value);
-              value.dispose();
-            });
-            material.dispose();
-          });
-        });
-      };
-
-      const loader = new GLTFLoader();
-      const gltf = await loader.parseAsync(modelData, window.location.href);
-      const model = gltf.scene;
-      if (disposed) {
-        disposeModel(model);
-        return;
-      }
-
-      model.traverse((object) => {
-        if (!(object instanceof THREE.Mesh)) return;
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => {
-          material.side = THREE.DoubleSide;
-          if (material instanceof THREE.MeshStandardMaterial) {
-            material.color.set(0xffffff);
-            material.metalness = 0.04;
-            material.roughness = 0.82;
-            if (material.map) {
-              material.map.colorSpace = THREE.SRGBColorSpace;
-              material.map.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
-            }
-          }
-          material.needsUpdate = true;
-        });
-      });
-
-      model.updateMatrixWorld(true);
-      const bounds = new THREE.Box3().setFromObject(model);
-      const size = bounds.getSize(new THREE.Vector3());
-      const center = bounds.getCenter(new THREE.Vector3());
-      const extent = Math.max(size.x, size.y, size.z, 1);
-      model.position.sub(center);
-      scene.add(model);
-
-      camera.near = extent / 100;
-      camera.far = extent * 100;
-      // Frame the whole model with margin: at a 32° vertical fov the full extent needs
-      // ~1.75x distance, so start further back instead of cropping the head and feet.
-      camera.position.set(extent * 0.78, extent * 0.14, extent * 2.15);
-      camera.updateProjectionMatrix();
-      controls.target.set(0, 0, 0);
-      controls.minDistance = extent * 0.72;
-      controls.maxDistance = extent * 3.2;
-      controls.update();
-
-      const handleKeyDown = (event: KeyboardEvent) => {
-        const step = event.shiftKey ? 0.18 : 0.08;
-        if (event.key === "ArrowLeft") controls.rotateLeft(step);
-        else if (event.key === "ArrowRight") controls.rotateLeft(-step);
-        else if (event.key === "ArrowUp") controls.rotateUp(step);
-        else if (event.key === "ArrowDown") controls.rotateUp(-step);
-        else return;
-        event.preventDefault();
-        controls.update();
-        render();
-      };
-      const handleContextLost = (event: Event) => {
-        event.preventDefault();
-        if (!disposed) setStatus("fallback");
-      };
-      controls.addEventListener("change", render);
-      renderer.domElement.addEventListener("keydown", handleKeyDown);
-      renderer.domElement.addEventListener("webglcontextlost", handleContextLost);
-      resize();
-      setStatus("ready");
-
-      cleanup = () => {
-        resizeObserver.disconnect();
-        controls.removeEventListener("change", render);
-        renderer.domElement.removeEventListener("keydown", handleKeyDown);
-        renderer.domElement.removeEventListener("webglcontextlost", handleContextLost);
-        controls.dispose();
-        disposeModel(model);
-        renderer.dispose();
-        renderer.domElement.remove();
-      };
+      setStatus("fallback");
+      setAttempt((current) => (current < maxRecoveryAttempts ? current + 1 : current));
     };
 
-    void initialize().catch((error: unknown) => {
-      if (!disposed && !(error instanceof DOMException && error.name === "AbortError")) setStatus("fallback");
+    const show = async () => {
+      const [engine, model] = await Promise.all([getHeroEngine(), loadHeroModel(slug)]);
+      if (disposed) return;
+      attached = engine;
+      engine.setLabel(hero, slug);
+      engine.attach(host);
+      engine.showModel(model);
+      engine.canvas.addEventListener("webglcontextlost", handleContextLost);
+      setStatus("ready");
+    };
+
+    void show().catch(() => {
+      if (!disposed) setStatus("fallback");
     });
 
     return () => {
       disposed = true;
-      abortController.abort();
-      cleanup();
+      if (!attached) return;
+      attached.canvas.removeEventListener("webglcontextlost", handleContextLost);
+      attached.detach(host);
     };
-  }, [hero, slug]);
+    // `attempt` re-runs the effect after a context loss, with a fresh engine.
+  }, [hero, slug, attempt]);
 
   return (
     <div className={`hero-viewer ${status}`} aria-label={`Интерактивная 3D-модель героя ${hero}`}>
       <div ref={hostRef} className="hero-viewer-stage" />
-      {status !== "ready" && (
-        <Image className="hero-model hero-model-poster" src={poster} alt={hero} width={1080} height={1080} priority unoptimized />
-      )}
+      {/* The poster stays mounted and fades out, so a hero switch never blinks. */}
+      <Image className="hero-model hero-model-poster" src={poster} alt={hero} width={1080} height={1080} priority unoptimized />
       {status === "loading" && <span className="hero-model-loading" role="status">Загружаем 3D-модель…</span>}
       {status === "fallback" && <span className="hero-model-loading" role="status">3D недоступно — показываем постер</span>}
-      <span id={`hero-model-help-${slug}`} className="sr-only">Перетаскивайте модель мышью или используйте клавиши со стрелками. Прокрутка страницы остаётся доступной.</span>
+      <span id={`hero-model-help-${slug}`} className="sr-only">
+        Перетаскивайте модель мышью, крутите колёсиком или используйте клавиши со стрелками, чтобы вращать героя. Страница продолжает прокручиваться свайпом и колесом вне модели.
+      </span>
     </div>
   );
 }
