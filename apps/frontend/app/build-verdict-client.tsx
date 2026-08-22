@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import Image from "next/image";
 import HeroModelViewer from "./hero-model-viewer";
+import { heroSlugFromImage, preloadHeroModels } from "./hero-model-engine";
 
 type View = "random" | "all";
 type Vote = "positive" | "situational" | "negative";
@@ -270,7 +271,7 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
     const total = values.reduce((sum, value) => sum + value, 0);
     return values.map((value) => Math.round((value / total) * 100)) as [number, number, number];
   }, [build, vote]);
-  const heroAssetName = build.heroImage.split("/").at(-1)?.replace(/\.png$/, "") ?? "antimage";
+  const heroAssetName = heroSlugFromImage(build.heroImage);
   const buildComments = [...build.comments, ...(localComments[build.id] ?? [])];
   // Collapsed the list stops at two entries, which keeps the composer fully in view.
   const isCommentsExpanded = expandedBuildId === build.id;
@@ -367,7 +368,9 @@ function RandomBuild({ build, vote, onVote, onNext }: { build: Build; vote: Vote
 
         <div className="hero-showcase">
           <div className="hero-aura" aria-hidden="true" />
-          <HeroModelViewer key={heroAssetName} hero={build.hero} slug={heroAssetName} />
+          {/* No `key`: remounting per hero would tear down the WebGL context and
+              refetch the model. The viewer swaps the model in place instead. */}
+          <HeroModelViewer hero={build.hero} slug={heroAssetName} />
         </div>
 
         <aside className="rating-panel">
@@ -542,6 +545,14 @@ export default function BuildVerdictClient({ initialUser = null }: { initialUser
   const [theme, setTheme] = useState<Theme>(() => typeof document !== "undefined" && document.documentElement.dataset.theme === "light" ? "light" : "dark");
   const [isAddBuildOpen, setIsAddBuildOpen] = useState(false);
   const [heroSearch, setHeroSearch] = useState("");
+  const currentSlug = heroSlugFromImage(builds[randomIndex].heroImage);
+
+  // Warm the remaining hero models while the reader looks at this one, current
+  // hero first, so "Другой билд" lands on an already-parsed model.
+  useEffect(() => {
+    const slugs = builds.map((build) => heroSlugFromImage(build.heroImage));
+    return preloadHeroModels([...new Set([currentSlug, ...slugs])]);
+  }, [builds, currentSlug]);
 
   const showNextBuild = () => {
     setRandomIndex((current) => (current + 1 + Math.floor(Math.random() * (builds.length - 1))) % builds.length);
