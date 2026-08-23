@@ -4,10 +4,6 @@ export type Hero = {
     image: string;
 };
 
-/**
- * MVP-каталог героев: статичный список под уже имеющиеся ассеты фронтенда.
- * Позже заменяется импортом из официального каталога Dota 2.
- */
 export const HEROES: Hero[] = [
     { id: 'antimage', name: 'Anti-Mage', image: '/assets/heroes/antimage.png' },
     { id: 'bloodseeker', name: 'Bloodseeker', image: '/assets/heroes/bloodseeker.png' },
