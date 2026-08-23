@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { defaultTheme, themeBootstrapScript } from "./_lib/theme";
 
 export const metadata: Metadata = {
   applicationName: "BuildVerdict",
@@ -34,12 +35,10 @@ export const viewport: Viewport = {
   ],
 };
 
-const themeBootstrap = `(() => { try { const saved = localStorage.getItem("buildverdict-theme"); const theme = saved === "light" || saved === "dark" ? saved : (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"); document.documentElement.dataset.theme = theme; } catch {} })();`;
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" data-theme="dark" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeBootstrap }} /></head>
+    <html lang="ru" data-theme={defaultTheme} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} /></head>
       <body>{children}</body>
     </html>
   );
