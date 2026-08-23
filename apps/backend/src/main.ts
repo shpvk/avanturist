@@ -11,6 +11,7 @@ import session from "express-session";
 import {ms, StringValue} from "./libs/common/utils/ms.util";
 import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
 import {RedisStore} from "connect-redis";
+import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 
 
 
@@ -18,6 +19,16 @@ async function bootstrap(): Promise<void> {
 
 
   const app = await NestFactory.create(AppModule);
+
+    const swaggerConfig = new DocumentBuilder()
+        .setTitle('BuildVerdict API')
+        .setDescription('API documentation')
+        .setVersion('1.0')
+        .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+    SwaggerModule.setup('api', app, document);
 
   const config = app.get(ConfigService);
   const redis = new IORedis(config.getOrThrow<string>('REDIS_URI'));
