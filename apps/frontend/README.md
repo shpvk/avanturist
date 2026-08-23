@@ -27,6 +27,30 @@ This starter does not use `wrangler.jsonc`.
 - `examples/d1/` contains an optional D1 example surface
 - `drizzle.config.ts` supports local migration generation when needed
 
+## BuildVerdict API
+
+The feed, votes and comments come from the Nest API in `apps/backend` (global prefix
+`/api`, port `BACKEND_PORT`, default `3001`):
+
+| Call | Endpoint |
+| --- | --- |
+| Hero catalog | `GET /heroes` |
+| Feed, newest first | `GET /builds` |
+| Publish a build | `POST /builds` |
+| Vote (one per `voterKey`) | `POST /builds/:id/votes` |
+| Comment | `POST /builds/:id/comments` |
+
+The page is read on the server in `app/_lib/feed.ts` and mapped to the view model in
+`app/_lib/api-mapping.ts` — roles, avatars, verdict wording and reputation are derived on
+the front end, because the API does not store them. When the API cannot be reached the
+page falls back to the demo builds in `app/_lib/build-data.ts`.
+
+Point the front end somewhere else with `VITE_API_URL`:
+
+```bash
+VITE_API_URL=http://localhost:3001/api npm run dev
+```
+
 ## Workspace Auth Headers
 
 Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.

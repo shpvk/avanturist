@@ -45,8 +45,8 @@ export default defineConfig(async () => {
 
   return {
     build: {
-      // Three.js is isolated behind the explicit "Включить 3D" action. Keep
-      // the normal budget strict while allowing that optional lazy chunk.
+      // Three.js loads lazily inside the hero viewer. Keep the normal budget
+      // strict while allowing that optional chunk.
       chunkSizeWarningLimit: 800,
     },
     server: isCodexSeatbeltSandbox
