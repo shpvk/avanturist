@@ -5,6 +5,7 @@ import { AddBuildDialog } from "./_components/add-build-dialog";
 import { AllBuildsView, defaultFeedFilters } from "./_components/all-builds-view";
 import { RandomBuildView } from "./_components/random-build-view";
 import { SiteHeader } from "./_components/site-header";
+import { useAuth } from "./_hooks/use-auth";
 import { useTheme } from "./_hooks/use-theme";
 import { ApiError, createBuild, createComment, createVote } from "./_lib/api";
 import { authorAvatar, mapBuild, mapComment } from "./_lib/api-mapping";
@@ -13,7 +14,7 @@ import { reputationValue } from "./_lib/format";
 import { createId } from "./_lib/id";
 import { getVoterKey } from "./_lib/voter";
 import type { CreateBuildPayload } from "./_lib/api-types";
-import type { AuthUser, Build, BuildComment, FeedFilters, HeroOption, Vote, View } from "./_lib/types";
+import type { Build, BuildComment, FeedFilters, HeroOption, Vote, View } from "./_lib/types";
 
 /** The API stores an author name of 2..40 characters and nothing else about the writer. */
 const anonymousAuthor = "Вы";
@@ -33,13 +34,13 @@ function scrollToTop() {
 }
 
 type BuildVerdictClientProps = {
-  initialUser?: AuthUser | null;
   /** Feed read on the server (`_lib/feed.ts`) — API builds, or the demo ones if it was down. */
   initialBuilds: Build[];
   heroes: HeroOption[];
 };
 
-export default function BuildVerdictClient({ initialUser = null, initialBuilds, heroes }: BuildVerdictClientProps) {
+export default function BuildVerdictClient({ initialBuilds, heroes }: BuildVerdictClientProps) {
+  const { user } = useAuth();
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [view, setView] = useState<View>("random");
   const [currentBuildId, setCurrentBuildId] = useState(initialBuilds[0]?.id ?? "");
@@ -54,7 +55,7 @@ export default function BuildVerdictClient({ initialUser = null, initialBuilds, 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [expandedCommentsId, setExpandedCommentsId] = useState<string | null>(null);
 
-  const authorName = (initialUser?.name ?? anonymousAuthor).slice(0, maxAuthorLength);
+  const authorName = (user?.displayName ?? anonymousAuthor).slice(0, maxAuthorLength);
   const currentBuild = useMemo(
     () => builds.find((build) => build.id === currentBuildId) ?? builds[0],
     [builds, currentBuildId],
@@ -126,13 +127,13 @@ export default function BuildVerdictClient({ initialUser = null, initialBuilds, 
       });
   }, [authorName, currentBuild, replaceBuild]);
 
-  const addBuild = useCallback(async (payload: Omit<CreateBuildPayload, "author">) => {
+  const addBuild = useCallback(async (payload: CreateBuildPayload) => {
     const hero = heroes.find((option) => option.id === payload.heroId);
     if (!hero) throw new Error(`Unknown hero "${payload.heroId}"`);
 
     let build: Build;
     try {
-      build = mapBuild(await createBuild({ ...payload, author: authorName }), { heroes });
+      build = mapBuild(await createBuild(payload), { heroes });
     } catch (error) {
       // A rejected build is the author's problem to fix; an unreachable API is not.
       if (error instanceof ApiError) throw error;
@@ -147,7 +148,7 @@ export default function BuildVerdictClient({ initialUser = null, initialBuilds, 
 
   return (
     <div className="site-shell">
-      <SiteHeader view={view} theme={theme} user={initialUser} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
+      <SiteHeader view={view} theme={theme} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
       {view === "random" && currentBuild ? (
         <RandomBuildView
           build={currentBuild}

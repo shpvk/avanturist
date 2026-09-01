@@ -31,17 +31,19 @@ export type ApiBuild = {
   title: string;
   heroId: string;
   items: string[];
+  /** Отображаемое имя автора; `authorId` — его идентификатор в базе. */
   author: string;
+  authorId?: string;
   createdAt: string;
   votes?: ApiVote[];
   comments?: ApiComment[];
 };
 
+/** Автора сервер берёт из access-токена, клиент его не передаёт. */
 export type CreateBuildPayload = {
   title: string;
   heroId: string;
   items: string[];
-  author?: string;
 };
 
 export type CreateVotePayload = {

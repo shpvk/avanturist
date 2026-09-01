@@ -507,3 +507,35 @@ html[data-theme="light"] .hero-model { filter: drop-shadow(0 14px 16px rgba(23, 
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   .build-card:hover, .primary-button:hover, .rating-button:hover { transform: none; }
 }
+
+/* Страницы авторизации: вход, регистрация, подтверждение почты, сброс пароля. */
+.auth-page { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; background: var(--page); }
+.auth-card { width: min(100%, 420px); padding: 32px; border: 1px solid var(--stroke); border-radius: 16px; background: var(--surface); }
+.auth-home { display: inline-block; margin-bottom: 20px; color: var(--text-dim); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; }
+.auth-home:hover { color: var(--text-soft); }
+.auth-title { margin: 0; color: var(--text); font-size: 26px; line-height: 1.2; font-weight: 620; letter-spacing: -0.5px; }
+.auth-subtitle { margin: 10px 0 0; color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+.auth-provider-button { margin-top: 24px; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid var(--stroke); border-radius: 10px; background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 650; text-decoration: none; }
+.auth-provider-button:hover { border-color: var(--stroke-strong); background: var(--surface-3); }
+.auth-provider-icon { display: grid; place-items: center; }
+.auth-divider { position: relative; margin: 22px 0; text-align: center; }
+.auth-divider::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--stroke); }
+.auth-divider span { position: relative; padding: 0 12px; background: var(--surface); color: var(--text-dim); font-size: 12px; }
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+.auth-field { display: flex; flex-direction: column; gap: 7px; }
+.auth-label { color: var(--text-soft); font-size: 13px; font-weight: 650; }
+.auth-input-wrap { position: relative; display: flex; align-items: center; }
+.auth-input-wrap input { width: 100%; min-height: 46px; padding: 0 44px 0 14px; border: 1px solid var(--stroke); border-radius: 10px; background: var(--surface-2); color: var(--text); font-size: 14px; outline: 0; }
+.auth-input-wrap input::placeholder { color: var(--text-dim); opacity: 1; }
+.auth-input-wrap input:focus { border-color: color-mix(in srgb, var(--accent) 60%, transparent); box-shadow: 0 0 0 3px rgba(109, 140, 255, 0.12); }
+.auth-eye { position: absolute; right: 6px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--text-dim); font-size: 15px; cursor: pointer; }
+.auth-eye:hover { background: var(--surface-3); color: var(--text); }
+.auth-inline-link { align-self: flex-start; color: var(--text-soft); font-size: 13px; text-decoration: underline; }
+.auth-inline-link:hover { color: var(--text); }
+.auth-error { margin: 0; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--red) 40%, transparent); border-radius: 9px; background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); font-size: 13px; }
+.auth-submit { margin-top: 4px; min-height: 46px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: var(--accent-strong); color: #fff; font-size: 14px; font-weight: 650; text-decoration: none; cursor: pointer; }
+.auth-submit:hover:not(:disabled) { background: #6482f8; }
+.auth-submit:disabled { opacity: 0.6; cursor: progress; }
+.auth-footer { margin: 22px 0 0; color: var(--text-dim); font-size: 13px; text-align: center; }
+.auth-footer a { color: var(--accent); text-decoration: none; }
+.auth-footer a:hover { text-decoration: underline; }
