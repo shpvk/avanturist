@@ -8,11 +8,6 @@ export type RoleFilter = "all" | RoleClass;
 /** Like / situational / dislike, in the order the vote bar paints them. */
 export type VoteTally = [number, number, number];
 
-export type AuthUser = {
-  name: string;
-  email: string;
-};
-
 export type BuildComment = {
   id: string;
   author: string;

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import BuildVerdictClient from "./build-verdict-client";
-import { getChatGPTUser } from "./chatgpt-auth";
 import { loadFeed } from "./_lib/feed";
 
 export const dynamic = "force-dynamic";
@@ -33,13 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [user, feed] = await Promise.all([getChatGPTUser(), loadFeed()]);
+  // Сессия живёт в браузере (access в памяти, refresh в localStorage),
+  // поэтому пользователя знает только клиент — сервер отдаёт лишь ленту.
+  const feed = await loadFeed();
 
-  return (
-    <BuildVerdictClient
-      initialUser={user ? { name: user.displayName, email: user.email } : null}
-      initialBuilds={feed.builds}
-      heroes={feed.heroes}
-    />
-  );
+  return <BuildVerdictClient initialBuilds={feed.builds} heroes={feed.heroes} />;
 }

@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
   Validate,
@@ -30,14 +31,18 @@ export class RegisterDto {
 
   @IsString({ message: 'Password must be a string.' })
   @IsNotEmpty({ message: 'Password is required.' })
-  @MinLength(6, { message: 'Password must be at least 6 characters long.' })
+  @MinLength(8, { message: 'Password must be at least 8 characters long.' })
   password!: string;
 
   @IsString({ message: 'Password repeat must be a string.' })
   @IsNotEmpty({ message: 'Password repeat is required.' })
-  @MinLength(6, {
-    message: 'Password repeat must be at least 6 characters long.',
+  @MinLength(8, {
+    message: 'Password repeat must be at least 8 characters long.',
   })
   @Validate(PasswordsMatchConstraint, { message: 'Passwords do not match.' })
   passwordRepeat!: string;
+
+  @IsOptional()
+  @IsString({ message: 'Captcha token must be a string.' })
+  turnstileToken?: string;
 }

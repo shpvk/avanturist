@@ -1,3 +1,5 @@
+import { apiBaseUrl, ApiError } from "./api-base";
+import { authorizedFetch } from "./auth-api";
 import type {
   ApiBuild,
   ApiComment,
@@ -7,28 +9,11 @@ import type {
   CreateVotePayload,
 } from "./api-types";
 
-/**
- * Base URL of the Nest API (`apps/backend`, global prefix `/api`). Override with
- * VITE_API_URL; the default matches BACKEND_PORT from the repository .env.
- */
-const configuredApiUrl = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_URL;
-
-export const apiBaseUrl: string = configuredApiUrl ?? "http://localhost:3001/api";
+export { apiBaseUrl, ApiError } from "./api-base";
 
 /** The page must render even when the API is asleep, so server reads give up quickly. */
 const serverTimeoutMs = 2500;
 const mutationTimeoutMs = 8000;
-
-/** A response the API actually rejected — as opposed to it being unreachable. */
-export class ApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
 
 async function request<T>(path: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const { timeoutMs = mutationTimeoutMs, ...requestInit } = init;
@@ -50,8 +35,15 @@ export function fetchBuilds(timeoutMs = serverTimeoutMs): Promise<ApiBuild[]> {
   return request<ApiBuild[]>("/builds", { timeoutMs });
 }
 
-export function createBuild(payload: CreateBuildPayload): Promise<ApiBuild> {
-  return request<ApiBuild>("/builds", { method: "POST", body: JSON.stringify(payload) });
+/** Публикация билда доступна только вошедшему пользователю с подтверждённой почтой. */
+export async function createBuild(payload: CreateBuildPayload): Promise<ApiBuild> {
+  const response = await authorizedFetch("/builds", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new ApiError(response.status, `POST /builds → ${response.status}`);
+  return (await response.json()) as ApiBuild;
 }
 
 /** The API answers a vote with the whole build, tallies included. */

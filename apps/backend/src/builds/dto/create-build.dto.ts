@@ -1,4 +1,4 @@
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, IsString, Length } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsString, Length } from 'class-validator';
 
 export class CreateBuildDto {
     @IsString()
@@ -14,9 +14,4 @@ export class CreateBuildDto {
     @ArrayMaxSize(12)
     @IsString({ each: true })
     items!: string[];
-
-    @IsOptional()
-    @IsString()
-    @Length(2, 40)
-    author?: string;
 }

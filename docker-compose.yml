@@ -25,6 +25,16 @@ services:
     networks:
       - backend
 
+  mailpit:
+    container_name: buildverdict_mailpit
+    image: axllent/mailpit:latest
+    restart: always
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - backend
+
 volumes:
   postgres_data:
   redis_data:
