@@ -25,7 +25,7 @@ export function LoginForm() {
       await login({ email, password });
       router.push("/");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось войти.");
+      setError(cause instanceof Error ? cause.message : "Could not sign in.");
     } finally {
       setIsSubmitting(false);
     }
@@ -33,26 +33,25 @@ export function LoginForm() {
 
   return (
     <AuthShell
-      title="Вход в аккаунт"
+      title="Log in"
       footer={
         <>
-          Нет аккаунта? <Link href="/register">Зарегистрироваться</Link>
+          No account yet? <Link href="/register">Sign up</Link>
         </>
       }
     >
       <GoogleButton />
-      <div className="auth-divider"><span>или</span></div>
+      <div className="auth-divider"><span>or</span></div>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label className="auth-field" htmlFor="login-email">
-          <span className="auth-label">Почта</span>
+          <span className="auth-label">Email</span>
           <span className="auth-input-wrap">
             <input
               id="login-email"
               type="email"
               value={email}
               autoComplete="email"
-              placeholder="Почта"
               required
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -61,18 +60,18 @@ export function LoginForm() {
 
         <PasswordField
           id="login-password"
-          label="Пароль"
+          label="Password"
           value={password}
           autoComplete="current-password"
           onChange={setPassword}
         />
 
-        <Link className="auth-inline-link" href="/auth/password-reset">Забыли пароль?</Link>
+        <Link className="auth-inline-link" href="/auth/password-reset">Forgot your password?</Link>
 
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
         <button className="auth-submit" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Входим…" : "Войти"}
+          {isSubmitting ? "Signing in…" : "Log in"}
         </button>
       </form>
     </AuthShell>

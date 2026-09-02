@@ -28,7 +28,7 @@ export function RegisterForm() {
       // Вход уже состоялся: письмо о подтверждении ждёт, публикация до него закрыта.
       router.push("/?registered=1");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось зарегистрироваться.");
+      setError(cause instanceof Error ? cause.message : "Could not create the account.");
     } finally {
       setIsSubmitting(false);
     }
@@ -36,27 +36,26 @@ export function RegisterForm() {
 
   return (
     <AuthShell
-      title="Создать аккаунт"
-      subtitle="Свои билды и комментарии открываются после подтверждения почты."
+      title="Create account"
+      subtitle="Your builds and comments unlock once you confirm your email."
       footer={
         <>
-          Уже есть аккаунт? <Link href="/login">Войти</Link>
+          Already have an account? <Link href="/login">Log in</Link>
         </>
       }
     >
-      <GoogleButton label="Зарегистрироваться через Google" />
-      <div className="auth-divider"><span>или</span></div>
+      <GoogleButton label="Sign up with Google" />
+      <div className="auth-divider"><span>or</span></div>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label className="auth-field" htmlFor="register-name">
-          <span className="auth-label">Имя</span>
+          <span className="auth-label">Name</span>
           <span className="auth-input-wrap">
             <input
               id="register-name"
               type="text"
               value={name}
               autoComplete="nickname"
-              placeholder="Как вас подписывать"
               required
               onChange={(event) => setName(event.target.value)}
             />
@@ -64,14 +63,13 @@ export function RegisterForm() {
         </label>
 
         <label className="auth-field" htmlFor="register-email">
-          <span className="auth-label">Почта</span>
+          <span className="auth-label">Email</span>
           <span className="auth-input-wrap">
             <input
               id="register-email"
               type="email"
               value={email}
               autoComplete="email"
-              placeholder="Почта"
               required
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -80,7 +78,7 @@ export function RegisterForm() {
 
         <PasswordField
           id="register-password"
-          label="Пароль"
+          label="Password"
           value={password}
           autoComplete="new-password"
           onChange={setPassword}
@@ -88,7 +86,7 @@ export function RegisterForm() {
 
         <PasswordField
           id="register-password-repeat"
-          label="Пароль ещё раз"
+          label="Repeat password"
           value={passwordRepeat}
           autoComplete="new-password"
           onChange={setPasswordRepeat}
@@ -97,7 +95,7 @@ export function RegisterForm() {
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
         <button className="auth-submit" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Создаём…" : "Зарегистрироваться"}
+          {isSubmitting ? "Creating…" : "Sign up"}
         </button>
       </form>
     </AuthShell>

@@ -27,14 +27,13 @@ export function PasswordField({
           type={isVisible ? "text" : "password"}
           value={value}
           autoComplete={autoComplete}
-          placeholder={label}
           required
           onChange={(event) => onChange(event.target.value)}
         />
         <button
           className="auth-eye"
           type="button"
-          aria-label={isVisible ? "Скрыть пароль" : "Показать пароль"}
+          aria-label={isVisible ? "Hide password" : "Show password"}
           aria-pressed={isVisible}
           onClick={() => setIsVisible((current) => !current)}
         >
