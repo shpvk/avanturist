@@ -1,6 +1,8 @@
 /**
  * Refresh-токен живёт в localStorage, access — только в памяти вкладки.
- * Cookie в проекте не используются, поэтому XSS закрывается CSP, а не HttpOnly.
+ * Cookie в проекте не используются, поэтому HttpOnly здесь недоступен: цену
+ * XSS снижает CSP из `worker/index.ts` — она обрезает каналы, по которым
+ * украденный токен уходил бы наружу. Полной замены HttpOnly это не даёт.
  */
 const refreshStorageKey = "buildverdict.refresh";
 

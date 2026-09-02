@@ -72,14 +72,17 @@ export class UserService {
         return account?.user ?? null;
     }
 
-    /** Привязывает внешний аккаунт к существующему пользователю. */
+    /**
+     * Привязывает внешний аккаунт к существующему пользователю.
+     *
+     * Токены провайдера сознательно не храним: приложение к его API больше не
+     * ходит, а в базе они были бы лишним трофеем при утечке. Колонки остаются
+     * пустыми, пока для них не появится настоящий потребитель.
+     */
     public async linkAccount(input: {
         userId: string;
         provider: string;
         providerAccountId: string;
-        accessToken?: string | null;
-        refreshToken?: string | null;
-        expiresAt?: number | null;
     }): Promise<void> {
         await this.prismaService.account.upsert({
             where: {
@@ -93,14 +96,14 @@ export class UserService {
                 type: 'oauth',
                 provider: input.provider,
                 providerAccountId: input.providerAccountId,
-                accessToken: input.accessToken ?? null,
-                refreshToken: input.refreshToken ?? null,
-                expiredAt: input.expiresAt ?? 0,
+                accessToken: null,
+                refreshToken: null,
+                expiredAt: 0,
             },
             update: {
-                accessToken: input.accessToken ?? null,
-                refreshToken: input.refreshToken ?? null,
-                expiredAt: input.expiresAt ?? 0,
+                accessToken: null,
+                refreshToken: null,
+                expiredAt: 0,
             },
         });
     }

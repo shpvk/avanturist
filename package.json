@@ -81,6 +81,9 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
+  "overrides": {
+    "mysql2": "^3.24.3"
+  },
   "allowScripts": {
     "argon2@0.45.1": true,
     "@prisma/engines@7.9.1": true,

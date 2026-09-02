@@ -7,8 +7,10 @@ services:
         - POSTGRES_USER=${POSTGRES_USER}
         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
         - POSTGRES_DB=${POSTGRES_DB}
+      # Слушаем только localhost: контейнеры для разработки не должны торчать
+      # в локальную сеть вместе с базой пользователей.
       ports:
-        - 5433:5432
+        - 127.0.0.1:5433:5432
       volumes:
         - postgres_data:/var/lib/postgresql/data
       networks:
@@ -18,8 +20,11 @@ services:
     container_name: buildverdict_redis
     image: redis:7-alpine
     restart: always
+    # Без requirepass Redis пускает любого, а в нём лежат все refresh-сессии
+    # (и REDIS_URI из .env всё равно приходит с паролем).
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
     ports:
-      - 6379:6379
+      - 127.0.0.1:6379:6379
     volumes:
       - redis_data:/data
     networks:
@@ -30,8 +35,8 @@ services:
     image: axllent/mailpit:latest
     restart: always
     ports:
-      - 1025:1025
-      - 8025:8025
+      - 127.0.0.1:1025:1025
+      - 127.0.0.1:8025:8025
     networks:
       - backend
 
