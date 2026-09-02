@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBuildDto } from './dto/create-build.dto';
+import {
+    commentSelect,
+    CommentRow,
+    PublicComment,
+    toPublicComment,
+} from '../comments/comment.mapper';
 
 /** Публичный вид сборки: предметы уже развёрнуты, автор — именем, а не связью. */
 export interface PublicBuild {
@@ -11,10 +17,20 @@ export interface PublicBuild {
     author: string;
     authorId: string;
     createdAt: string;
+    comments: PublicComment[];
 }
 
-const authorSelect = {
+/**
+ * Лента отдаёт только живые комментарии: скрытые модератором админ дочитывает
+ * отдельным запросом к ветке, а не получает вместе со всей лентой.
+ */
+const buildInclude = {
     author: { select: { id: true, displayName: true } },
+    comments: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'asc' },
+        select: commentSelect,
+    },
 } as const;
 
 @Injectable()
@@ -25,7 +41,7 @@ export class BuildsService {
     public async findAll(): Promise<PublicBuild[]> {
         const builds = await this.prismaService.build.findMany({
             orderBy: { createdAt: 'desc' },
-            include: authorSelect,
+            include: buildInclude,
         });
 
         return builds.map(build => this.toPublic(build));
@@ -39,7 +55,7 @@ export class BuildsService {
                 items: JSON.stringify(dto.items),
                 userId,
             },
-            include: authorSelect,
+            include: buildInclude,
         });
 
         return this.toPublic(build);
@@ -52,6 +68,7 @@ export class BuildsService {
         items: string;
         createdAt: Date;
         author: { id: string; displayName: string };
+        comments: CommentRow[];
     }): PublicBuild {
         return {
             id: build.id,
@@ -61,6 +78,9 @@ export class BuildsService {
             author: build.author.displayName,
             authorId: build.author.id,
             createdAt: build.createdAt.toISOString(),
+            comments: build.comments.map(comment =>
+                toPublicComment(comment, { moderator: false }),
+            ),
         };
     }
 

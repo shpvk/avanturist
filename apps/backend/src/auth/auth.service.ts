@@ -5,6 +5,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { verify } from 'argon2';
+import { isMuted } from '../user/mute.util';
 import { UserService } from '../user/user.service';
 import { TokenService } from './token.service';
 import { EmailTokenService } from './email-token.service';
@@ -34,6 +35,11 @@ export interface AuthResponse extends TokenPair {
         picture: string | null;
         role: string;
         isVerified: boolean;
+        /** Мут закрывает комментарии; интерфейс знает об этом до отправки. */
+        muted: boolean;
+        /** `null` при бессрочном муте и при снятом. */
+        mutedUntil: string | null;
+        muteReason: string | null;
     };
 }
 
@@ -261,6 +267,8 @@ export class AuthService {
     }
 
     public publicUser(user: User): AuthResponse['user'] {
+        const muted = isMuted(user);
+
         return {
             id: user.id,
             email: user.email,
@@ -268,6 +276,9 @@ export class AuthService {
             picture: user.picture,
             role: user.role,
             isVerified: user.isVerified,
+            muted,
+            mutedUntil: muted ? (user.mutedUntil?.toISOString() ?? null) : null,
+            muteReason: muted ? user.muteReason : null,
         };
     }
 }

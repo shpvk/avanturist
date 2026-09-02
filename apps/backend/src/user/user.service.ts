@@ -4,6 +4,15 @@ import { AuthMethod } from '../generated/prisma/enums';
 import { User } from '../generated/prisma/client';
 import { hash } from 'argon2';
 
+/**
+ * Активный мут пользователя. `until: null` — бессрочный: в базе такой мут
+ * отличается от снятого тем, что заполнен `mutedAt`.
+ */
+export interface ActiveMute {
+    until: Date | null;
+    reason: string | null;
+}
+
 /** Данные для создания пользователя: у OAuth-аккаунтов пароля нет. */
 export interface CreateUserInput {
     email: string;
@@ -119,6 +128,62 @@ export class UserService {
         return this.prismaService.user.update({
             where: { id },
             data: { password: await hash(password) },
+        });
+    }
+
+    /**
+     * Действующий мут или `null`. Истёкший мут заодно снимается: иначе метка
+     * жила бы в базе вечно и попадала бы в ответы модерации как активная.
+     */
+    public async activeMute(
+        userId: string,
+        now: Date = new Date(),
+    ): Promise<ActiveMute | null> {
+        const user = await this.prismaService.user.findUnique({
+            where: { id: userId },
+            select: { mutedAt: true, mutedUntil: true, muteReason: true },
+        });
+
+        if (!user?.mutedAt) {
+            return null;
+        }
+
+        if (user.mutedUntil && user.mutedUntil <= now) {
+            await this.unmute(userId);
+
+            return null;
+        }
+
+        return { until: user.mutedUntil, reason: user.muteReason };
+    }
+
+    /** Закрывает пользователю комментарии. `until: null` — бессрочно. */
+    public async mute(input: {
+        userId: string;
+        until: Date | null;
+        reason: string | null;
+        byId: string;
+    }): Promise<User> {
+        return this.prismaService.user.update({
+            where: { id: input.userId },
+            data: {
+                mutedAt: new Date(),
+                mutedUntil: input.until,
+                muteReason: input.reason,
+                mutedById: input.byId,
+            },
+        });
+    }
+
+    public async unmute(userId: string): Promise<User> {
+        return this.prismaService.user.update({
+            where: { id: userId },
+            data: {
+                mutedAt: null,
+                mutedUntil: null,
+                muteReason: null,
+                mutedById: null,
+            },
         });
     }
 }

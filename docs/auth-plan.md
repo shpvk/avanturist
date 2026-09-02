@@ -76,7 +76,9 @@
 | POST | `/auth/password-reset/confirm` | Новый пароль по токену, инвалидирует все refresh-токены пользователя |
 | GET | `/auth/me` | Текущий профиль по access-токену |
 
-Ответ логина и refresh: `{ accessToken, refreshToken, expiresIn, user: { id, email, displayName, picture, role, isVerified } }`.
+Ответ логина и refresh: `{ accessToken, refreshToken, expiresIn, user: { id, email, displayName, picture, role, isVerified, muted, mutedUntil, muteReason } }`.
+
+Поля мута нужны интерфейсу до отправки: композер комментариев показывает срок и причину, а не общее «нельзя». В токене их нет — мут проверяется в базе (`NotMutedGuard`), иначе выданный до мута access продолжал бы писать все 15 минут.
 
 ## Guards и декораторы
 
