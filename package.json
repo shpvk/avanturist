@@ -3,9 +3,13 @@
   "private": true,
   "scripts": {
     "test": "npm run backend:test && npm run frontend:test",
+    "prisma:generate": "prisma generate",
+    "prebackend": "prisma generate",
     "backend": "nest start --watch",
+    "prebackend:build": "prisma generate",
     "backend:build": "nest build",
     "backend:start": "node apps/backend/dist/main.js",
+    "prebackend:test": "prisma generate",
     "backend:test": "jest",
     "frontend": "npm --prefix apps/frontend run dev",
     "frontend:build": "npm --prefix apps/frontend run build",

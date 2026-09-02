@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { loadRootEnv } from './load-env';
+import { assertRequiredEnv, loadRootEnv } from './load-env';
 import {ConfigService} from "@nestjs/config";
 import {ValidationPipe} from "@nestjs/common";
 import {NestFactory} from "@nestjs/core";
@@ -9,6 +9,7 @@ import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 async function bootstrap(): Promise<void> {
 
   loadRootEnv();
+  assertRequiredEnv();
 
   const app = await NestFactory.create(AppModule);
 
