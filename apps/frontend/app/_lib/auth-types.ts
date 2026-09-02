@@ -6,6 +6,11 @@ export type AuthProfile = {
   picture: string | null;
   role: "REGULAR" | "ADMIN";
   isVerified: boolean;
+  /** Мут закрывает только комментарии; форма знает об этом до отправки. */
+  muted: boolean;
+  /** `null` — мут бессрочный. */
+  mutedUntil: string | null;
+  muteReason: string | null;
 };
 
 export type AuthTokens = {

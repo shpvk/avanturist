@@ -9,6 +9,7 @@ import { VoteBar, VoteValues } from "./vote-bar";
 import HeroModelViewer from "../_hero-model/hero-model-viewer";
 import { heroSlug, voteOptions } from "../_lib/build-data";
 import { votePercentages } from "../_lib/votes";
+import type { BuildThread } from "../_hooks/use-build-thread";
 import type { Build, Vote } from "../_lib/types";
 
 type RandomBuildViewProps = {
@@ -16,27 +17,13 @@ type RandomBuildViewProps = {
   vote: Vote | null;
   /** A vote still being saved: counted into the bar until the API answers with its own tally. */
   pendingVote: Vote | null;
-  draft: string;
-  commentsExpanded: boolean;
+  /** Обсуждение под билдом целиком: черновик, состояние композера, модерация. */
+  thread: BuildThread;
   onVote: (vote: Vote) => void;
   onNext: () => void;
-  onDraftChange: (value: string) => void;
-  onAddComment: (text: string) => void;
-  onCommentsExpandedChange: (expanded: boolean) => void;
 };
 
-export function RandomBuildView({
-  build,
-  vote,
-  pendingVote,
-  draft,
-  commentsExpanded,
-  onVote,
-  onNext,
-  onDraftChange,
-  onAddComment,
-  onCommentsExpandedChange,
-}: RandomBuildViewProps) {
+export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNext }: RandomBuildViewProps) {
   const displayedVotes = useMemo(() => votePercentages(build.votes, pendingVote), [build.votes, pendingVote]);
   const slug = heroSlug(build.heroImage);
 
@@ -70,12 +57,15 @@ export function RandomBuildView({
           <BuildComments
             buildId={build.id}
             comments={build.comments}
-            expanded={commentsExpanded}
-            draft={draft}
-            onToggleExpanded={() => onCommentsExpandedChange(!commentsExpanded)}
-            onExpand={() => onCommentsExpandedChange(true)}
-            onDraftChange={onDraftChange}
-            onSubmit={onAddComment}
+            expanded={thread.expanded}
+            draft={thread.draft}
+            composer={thread.composer}
+            moderation={thread.moderation}
+            error={thread.error}
+            onToggleExpanded={() => thread.setExpanded(!thread.expanded)}
+            onExpand={() => thread.setExpanded(true)}
+            onDraftChange={thread.setDraft}
+            onSubmit={thread.addComment}
           />
         </div>
 
