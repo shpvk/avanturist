@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { BuildsModule } from './builds/builds.module';
+import { CommentsModule } from './comments/comments.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -29,6 +30,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
         HeroesModule,
         AuthModule,
         BuildsModule,
+        CommentsModule,
         PrismaModule,
         UserModule,
     ],
