@@ -9,6 +9,6 @@ export class BuildsController {
 
     @Get()
     findAll(): Promise<Build[]> {
-        return this.buildsService.findALl();
+        return this.buildsService.findAll();
     }
 }

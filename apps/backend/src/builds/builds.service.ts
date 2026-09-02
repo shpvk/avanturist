@@ -8,7 +8,7 @@ import {CreateBuildDto} from "./dto/create-build.dto";
 export class BuildsService {
     constructor(private readonly prismaService: PrismaService) {}
 
-    async findALl(): Promise<Build[]> {
+    async findAll(): Promise<Build[]> {
         return this.prismaService.build.findMany();
     }
 
