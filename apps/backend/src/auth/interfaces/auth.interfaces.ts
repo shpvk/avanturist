@@ -8,6 +8,8 @@ export interface JwtPayload {
     isVerified: boolean;
     jti: string;
     familyId: string;
+    /** Время выпуска в секундах, его подставляет сам JWT. */
+    iat?: number;
 }
 
 /** Пользователь, положенный в запрос после проверки access-токена. */

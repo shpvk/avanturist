@@ -3,16 +3,80 @@ import { assertRequiredEnv, loadRootEnv } from './load-env';
 import {ConfigService} from "@nestjs/config";
 import {ValidationPipe} from "@nestjs/common";
 import {NestFactory} from "@nestjs/core";
+import type {NextFunction, Request, Response} from "express";
+import type {NestExpressApplication} from "@nestjs/platform-express";
 import {AppModule} from "./app.module";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
+import {IS_DEV_ENV} from "./libs/common/utils/is-dev.utils";
+import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
+
+/**
+ * Значение для express `trust proxy`: число — столько хопов доверяем,
+ * `true`/`false` — доверять всем или никому, всё остальное — список адресов.
+ */
+function trustProxyValue(raw: string): boolean | number | string {
+  if (/^\d+$/.test(raw)) {
+    return Number(raw);
+  }
+
+  if (raw === 'true' || raw === 'false') {
+    return parseBoolean(raw);
+  }
+
+  return raw;
+}
 
 async function bootstrap(): Promise<void> {
 
   loadRootEnv();
   assertRequiredEnv();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  const config = app.get(ConfigService);
+
+  // Заголовок выдаёт стек приложения и ничего не даёт клиенту.
+  app.disable('x-powered-by');
+
+  // За реверс-прокси req.ip без этого равен адресу прокси: throttler считает
+  // всех клиентов одним ведром, а Turnstile получает чужой remoteip.
+  const trustProxy = config.get<string>('TRUST_PROXY')?.trim();
+
+  if (trustProxy) {
+    app.set('trust proxy', trustProxyValue(trustProxy));
+  }
+
+  // Swagger — карта всего API: в прод его отдавать не надо.
+  const swaggerEnabled = parseBoolean(
+      config.get<string>('SWAGGER_ENABLED') ?? String(IS_DEV_ENV),
+  );
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    // В ответах API нет ссылок наружу, а в query бывают одноразовые коды.
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+
+    if (!IS_DEV_ENV) {
+      res.setHeader(
+          'Strict-Transport-Security',
+          'max-age=31536000; includeSubDomains',
+      );
+    }
+
+    // JSON-ответам не нужен ни один источник; страницу Swagger это сломало бы.
+    if (!swaggerEnabled || !req.path.startsWith('/api')) {
+      res.setHeader(
+          'Content-Security-Policy',
+          "default-src 'none'; frame-ancestors 'none'",
+      );
+    }
+
+    next();
+  });
+
+  if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
         .setTitle('BuildVerdict API')
         .setDescription('API documentation')
@@ -23,8 +87,7 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(app, swaggerConfig);
 
     SwaggerModule.setup('api', app, document);
-
-  const config = app.get(ConfigService);
+  }
 
   app.useGlobalPipes(new ValidationPipe({
     transform: true,

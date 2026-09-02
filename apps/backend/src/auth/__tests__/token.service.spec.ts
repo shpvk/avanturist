@@ -220,4 +220,44 @@ describe('TokenService', () => {
             UnauthorizedException,
         );
     });
+
+    it('logout-all гасит и уже выпущенные access-токены', async () => {
+        const { service } = createService();
+
+        const issuedAt = Math.floor(Date.now() / 1000) - 5;
+
+        expect(await service.isAccessRevoked(user.id, issuedAt)).toBe(false);
+
+        await service.revokeAllForUser(user.id);
+
+        expect(await service.isAccessRevoked(user.id, issuedAt)).toBe(true);
+        // Токен, выпущенный после отзыва, снова действителен.
+        expect(
+            await service.isAccessRevoked(
+                user.id,
+                Math.floor(Date.now() / 1000) + 5,
+            ),
+        ).toBe(false);
+    });
+
+    it('не отзывает access-токены других пользователей', async () => {
+        const { service } = createService();
+
+        await service.revokeAllForUser(user.id);
+
+        expect(
+            await service.isAccessRevoked('user-2', Math.floor(Date.now() / 1000) - 5),
+        ).toBe(false);
+    });
+
+    it('принимает oauth-state один раз и не принимает чужой', async () => {
+        const { service } = createService();
+
+        const state = await service.issueOAuthState();
+
+        expect(await service.claimOAuthState(state)).toBe(true);
+        expect(await service.claimOAuthState(state)).toBe(false);
+        expect(await service.claimOAuthState('подделка')).toBe(false);
+        expect(await service.claimOAuthState(undefined)).toBe(false);
+    });
 });

@@ -10,8 +10,6 @@ export interface GoogleProfile {
     emailVerified: boolean;
     displayName: string;
     picture: string | null;
-    accessToken: string;
-    refreshToken?: string;
 }
 
 @Injectable()
@@ -25,9 +23,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         });
     }
 
+    /**
+     * Токены Google дальше не передаём: приложению они не нужны, а лишняя
+     * копия чужого доступа — только риск утечки.
+     */
     public validate(
-        accessToken: string,
-        refreshToken: string,
+        _accessToken: string,
+        _refreshToken: string,
         profile: Profile,
         done: VerifyCallback,
     ): void {
@@ -46,8 +48,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             emailVerified: String((email as { verified?: unknown }).verified) === 'true',
             displayName: profile.displayName || email.value.split('@')[0],
             picture: profile.photos?.[0]?.value ?? null,
-            accessToken,
-            refreshToken,
         };
 
         done(null, user);

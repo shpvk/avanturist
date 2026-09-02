@@ -16,6 +16,15 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SessionMeta, TokenPair } from './interfaces/auth.interfaces';
 
+/**
+ * Хеш случайной строки, ни от чего не подходящий. Нужен, чтобы на неизвестный
+ * адрес и на аккаунт без пароля логин тратил столько же времени, сколько на
+ * реальную проверку: иначе по времени ответа можно перебрать существующие
+ * аккаунты, несмотря на одинаковый текст ошибки.
+ */
+const DUMMY_PASSWORD_HASH =
+    '$argon2id$v=19$m=65536,p=4,t=3$dLi8CevQ86dYIJ7hoMDE+A$mr33BzzBITpUIuryxLjbzfAre0wvV+rdq1ZWjcgTi2I';
+
 /** Ответ логина, регистрации и ротации. */
 export interface AuthResponse extends TokenPair {
     user: {
@@ -60,15 +69,15 @@ export class AuthService {
     public async login(dto: LoginDto, meta: SessionMeta): Promise<AuthResponse> {
         const user = await this.userService.findByEmail(dto.email);
 
-        // Один и тот же текст на «нет пользователя» и «неверный пароль»,
-        // чтобы форма логина не работала как проверка существования аккаунта.
-        if (!user?.password) {
-            throw new UnauthorizedException('Invalid email or password.');
-        }
+        // Один и тот же текст и то же время ответа на «нет пользователя» и
+        // «неверный пароль», чтобы форма логина не работала как проверка
+        // существования аккаунта.
+        const passwordMatches = await verify(
+            user?.password ?? DUMMY_PASSWORD_HASH,
+            dto.password,
+        );
 
-        const passwordMatches = await verify(user.password, dto.password);
-
-        if (!passwordMatches) {
+        if (!user?.password || !passwordMatches) {
             throw new UnauthorizedException('Invalid email or password.');
         }
 
@@ -128,12 +137,12 @@ export class AuthService {
                 isVerified: true,
             }));
 
+        // Токены Google приложению не нужны — оно ходит в их API только один
+        // раз, при входе. Незачем держать в базе то, что утечёт вместе с ней.
         await this.userService.linkAccount({
             userId: user.id,
             provider: 'google',
             providerAccountId: profile.providerAccountId,
-            accessToken: profile.accessToken,
-            refreshToken: profile.refreshToken,
         });
 
         // Google подтвердил адрес — старую неподтверждённую регистрацию можно открыть.

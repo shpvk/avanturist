@@ -120,6 +120,31 @@ export class TokenService {
         return JSON.parse(raw) as TokenPair & { userId: string };
     }
 
+    /**
+     * Одноразовый `state` для OAuth-редиректа. Без него чужой ответ Google
+     * можно подсунуть жертве по ссылке и залогинить её в аккаунт атакующего.
+     */
+    public async issueOAuthState(): Promise<string> {
+        const state = randomBytes(24).toString('base64url');
+
+        await this.redisService.client.set(this.stateKey(state), '1', 'EX', 600);
+
+        return state;
+    }
+
+    /** Проверяет и сразу гасит `state`: повторно тот же ответ не пройдёт. */
+    public async claimOAuthState(state: string | undefined): Promise<boolean> {
+        if (!state) {
+            return false;
+        }
+
+        const claimed = await this.redisService.client.getdel(
+            this.stateKey(state),
+        );
+
+        return claimed !== null;
+    }
+
     /** Выход с текущего устройства. */
     public async revoke(rawToken: string): Promise<void> {
         let parsed: ParsedRefreshToken;
@@ -145,6 +170,8 @@ export class TokenService {
         const userKey = this.userKey(userId);
         const sessionIds = await client.smembers(userKey);
 
+        await this.markAccessRevoked(userId);
+
         if (sessionIds.length === 0) {
             await client.del(userKey);
 
@@ -157,6 +184,28 @@ export class TokenService {
         ]);
 
         await client.del(...keys, userKey);
+    }
+
+    /**
+     * Access-токен самодостаточен, поэтому «выйти со всех устройств» и смена
+     * пароля сами по себе гасят только refresh: украденный access жил бы до
+     * конца своего TTL. Метка в Redis закрывает это окно и живёт ровно столько,
+     * сколько может прожить выпущенный до неё access-токен.
+     */
+    public async isAccessRevoked(
+        userId: string,
+        issuedAt?: number,
+    ): Promise<boolean> {
+        const raw = await this.redisService.client.get(
+            this.killswitchKey(userId),
+        );
+
+        if (!raw) {
+            return false;
+        }
+
+        // Токена без `iat` быть не должно; если он всё же пришёл — не доверяем.
+        return !issuedAt || issuedAt < Number(raw);
     }
 
     private async createPair(
@@ -252,6 +301,15 @@ export class TokenService {
             .exec();
     }
 
+    private async markAccessRevoked(userId: string): Promise<void> {
+        await this.redisService.client.set(
+            this.killswitchKey(userId),
+            String(Math.floor(Date.now() / 1000)),
+            'EX',
+            Math.max(1, Math.ceil(this.accessTtlMs / 1000)),
+        );
+    }
+
     private async dropSession(
         userId: string,
         jti: string,
@@ -343,5 +401,13 @@ export class TokenService {
 
     private exchangeKey(code: string): string {
         return `${this.prefix}exchange:${code}`;
+    }
+
+    private killswitchKey(userId: string): string {
+        return `${this.prefix}killswitch:${userId}`;
+    }
+
+    private stateKey(state: string): string {
+        return `${this.prefix}oauth-state:${state}`;
     }
 }

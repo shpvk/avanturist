@@ -5,7 +5,6 @@ import {
     HttpCode,
     HttpStatus,
     Post,
-    Query,
     Req,
     Res,
     UseGuards,
@@ -22,10 +21,14 @@ import { RefreshDto } from './dto/refresh.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailRequestDto } from './dto/email-request.dto';
 import { PasswordResetDto } from './dto/password-reset.dto';
+import { ExchangeCodeDto } from './dto/exchange-code.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { TurnstileGuard } from './guards/turnstile.guard';
-import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import {
+    GoogleCallbackGuard,
+    GoogleOAuthGuard,
+} from './guards/google-oauth.guard';
 import { GoogleProfile } from './strategies/google.strategy';
 import { SessionMeta } from './interfaces/auth.interfaces';
 
@@ -56,6 +59,7 @@ export class AuthController {
     }
 
     @Public()
+    @Throttle({ short: { ttl: 1_000, limit: 3 }, medium: { ttl: 60_000, limit: 30 } })
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
     public async refresh(@Body() dto: RefreshDto, @Req() req: Request) {
@@ -81,7 +85,7 @@ export class AuthController {
      * и меняет его на пару через `POST /auth/google/exchange`.
      */
     @Public()
-    @UseGuards(GoogleOAuthGuard)
+    @UseGuards(GoogleCallbackGuard)
     @Get('google/callback')
     public async googleCallback(
         @Req() req: Request,
@@ -100,14 +104,17 @@ export class AuthController {
         res.redirect(`${redirect}?code=${encodeURIComponent(code)}`);
     }
 
+    // Код приходит только телом: в query он осел бы в логах прокси и в Referer.
     @Public()
+    @Throttle({ medium: { ttl: 60_000, limit: 10 } })
     @HttpCode(HttpStatus.OK)
     @Post('google/exchange')
-    public async googleExchange(@Query('code') queryCode: string, @Body() body: { code?: string }) {
-        return this.authService.exchangeCode(body?.code ?? queryCode);
+    public async googleExchange(@Body() dto: ExchangeCodeDto) {
+        return this.authService.exchangeCode(dto.code);
     }
 
     @Public()
+    @Throttle({ medium: { ttl: 60_000, limit: 10 } })
     @HttpCode(HttpStatus.OK)
     @Post('verify-email')
     public async verifyEmail(@Body() dto: VerifyEmailDto) {
@@ -133,6 +140,7 @@ export class AuthController {
     }
 
     @Public()
+    @Throttle({ medium: { ttl: 60_000, limit: 10 } })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Post('password-reset/confirm')
     public async confirmPasswordReset(@Body() dto: PasswordResetDto): Promise<void> {

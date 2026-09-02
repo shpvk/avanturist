@@ -9,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { parseBoolean } from '../../libs/common/utils/parse-boolean.utils';
+import { IS_DEV_ENV } from '../../libs/common/utils/is-dev.utils';
 
 const VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
@@ -25,14 +26,18 @@ interface TurnstileVerifyResponse {
 export class TurnstileGuard implements CanActivate {
     private readonly logger = new Logger(TurnstileGuard.name);
 
-    public constructor(private readonly configService: ConfigService) {}
+    public constructor(private readonly configService: ConfigService) {
+        // Молча выключенная капча в проде — открытая дверь в регистрацию и в
+        // рассылку писем на чужие адреса. Пусть это хотя бы видно в логах.
+        if (!IS_DEV_ENV && !this.enabled()) {
+            this.logger.warn(
+                'TURNSTILE_ENABLED is off: registration, login and email forms have no captcha.',
+            );
+        }
+    }
 
     public async canActivate(context: ExecutionContext): Promise<boolean> {
-        const enabled = parseBoolean(
-            this.configService.get<string>('TURNSTILE_ENABLED') ?? 'false',
-        );
-
-        if (!enabled) {
+        if (!this.enabled()) {
             return true;
         }
 
@@ -73,5 +78,11 @@ export class TurnstileGuard implements CanActivate {
         }
 
         return true;
+    }
+
+    private enabled(): boolean {
+        return parseBoolean(
+            this.configService.get<string>('TURNSTILE_ENABLED') ?? 'false',
+        );
     }
 }
