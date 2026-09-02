@@ -22,8 +22,15 @@ export type ApiComment = {
   id: string;
   buildId: string;
   author: string;
+  authorId: string;
   text: string;
   createdAt: string;
+  /** Ниже — поля модерации: API присылает их только администратору. */
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  authorMuted?: boolean;
+  /** `null` при бессрочном муте — вместе с `authorMuted: true`. */
+  authorMutedUntil?: string | null;
 };
 
 export type ApiBuild = {
@@ -51,7 +58,20 @@ export type CreateVotePayload = {
   voterKey: string;
 };
 
+/** Автора сервер берёт из access-токена, как и у билда. */
 export type CreateCommentPayload = {
-  author: string;
   text: string;
+};
+
+/** Мут: срок в минутах, без него — бессрочно. */
+export type MutePayload = {
+  minutes?: number;
+  reason?: string;
+};
+
+export type ApiMute = {
+  userId: string;
+  muted: boolean;
+  mutedUntil: string | null;
+  reason: string | null;
 };
