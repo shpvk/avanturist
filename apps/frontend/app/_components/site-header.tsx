@@ -1,4 +1,4 @@
-import { chatGPTSignInPath, chatGPTSignOutPath } from "../_lib/auth-paths";
+import Link from "next/link";
 import type { AuthUser, Theme, View } from "../_lib/types";
 
 type SiteHeaderProps = {
@@ -14,9 +14,10 @@ export function SiteHeader({ view, theme, user, onViewChange, onThemeToggle, onA
   return (
     <header className="topbar">
       <div className="topbar-inner">
+        <button className="wordmark" type="button" onClick={() => onViewChange("random")} aria-label="BuildVerdict — главная">build<span>verdict</span></button>
         <nav className="header-nav" aria-label="Основные разделы">
-          <button className={view === "random" ? "active" : ""} type="button" aria-pressed={view === "random"} onClick={() => onViewChange("random")}>Случайный билд</button>
-          <button className={view === "all" ? "active" : ""} type="button" aria-pressed={view === "all"} onClick={() => onViewChange("all")}>Все билды</button>
+          <button className={view === "all" ? "active" : ""} type="button" aria-label="Все билды" aria-pressed={view === "all"} onClick={() => onViewChange("all")}>Билды</button>
+          <button type="button" onClick={onAddBuild}>Добавить билд</button>
         </nav>
         <button
           className={`theme-toggle ${theme}`}
@@ -29,15 +30,12 @@ export function SiteHeader({ view, theme, user, onViewChange, onThemeToggle, onA
           <span className="theme-icon" aria-hidden="true" />
         </button>
         <div className="header-actions">
-          <button className="primary-button" type="button" onClick={onAddBuild}>Добавить билд</button>
-          {user ? (
-            <a className="account-button" href={chatGPTSignOutPath("/")} aria-label={`Выйти из аккаунта ${user.name}`}>
-              <span className="account-avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
-              <span className="account-copy"><strong>{user.name}</strong><small>Выйти</small></span>
-            </a>
-          ) : (
-            <a className="login-button" href={chatGPTSignInPath("/")}><span className="person-icon" aria-hidden="true" />Войти</a>
-          )}
+          {/* Signed in or not, the icon goes to /profile — the profile page sends guests on to /login. */}
+          <Link className="profile-button" href="/profile" aria-label={user ? `Профиль: ${user.name}` : "Профиль"} title={user ? user.name : "Профиль"}>
+            {user
+              ? <span className="account-avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
+              : <span className="person-icon" aria-hidden="true" />}
+          </Link>
         </div>
       </div>
     </header>
