@@ -1,6 +1,7 @@
 import { isoDay } from "./api-mapping";
+import { dotaItems, itemImageBase, type DotaItem } from "./dota-items";
 import { createId } from "./id";
-import type { Build, HeroOption, RoleFilter, Vote } from "./types";
+import type { Build, HeroOption, ItemFilter, Vote } from "./types";
 
 /**
  * Offline demo feed. The real content comes from the API (`_lib/api.ts`); these builds
@@ -10,7 +11,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
   {
     id: "anti-mage-mana-pressure", hero: "Anti-Mage", heroImage: "/assets/heroes/antimage.png", title: "Антимаг без антимагии",
     role: "Керри", roleClass: "carry",
-    items: ["bloodstone", "kaya", "yasha_and_kaya", "arcane_blink", "butterfly", "moon_shard"],
+    items: ["bloodstone", "kaya", "yasha_and_kaya", "arcane_blink", "butterfly", "moon_shard", "aghanims_shard", "conjurers_catalyst"],
     author: "SilentStep", avatar: "/assets/heroes/community-avatar.webp", reputation: "1 245",
     verdict: "Рекомендуется", verdictType: "recommended", votes: [82, 12, 6], date: "20 мая 2024", dateTime: "2024-05-20",
     comments: [
@@ -22,7 +23,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
   {
     id: "phantom-assassin-critical", hero: "Phantom Assassin", heroImage: "/assets/heroes/phantom_assassin.png", title: "Броня вместо уклонения",
     role: "Керри", roleClass: "carry",
-    items: ["blade_mail", "heart", "bloodstone", "pipe", "overwhelming_blink", "lotus_orb"],
+    items: ["blade_mail", "heart", "bloodstone", "pipe", "overwhelming_blink", "lotus_orb", "ultimate_scepter", "aghanims_shard", "cloak_of_flames"],
     author: "d3str0yer", avatar: "/assets/heroes/bloodseeker.png", reputation: "980",
     verdict: "Рекомендуется", verdictType: "recommended", votes: [76, 16, 8], date: "19 мая 2024", dateTime: "2024-05-19",
     comments: [
@@ -33,7 +34,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
   {
     id: "pudge-tank", hero: "Pudge", heroImage: "/assets/heroes/pudge.png", title: "Пудж через скорость атаки",
     role: "Оффлейн", roleClass: "offlane",
-    items: ["manta", "butterfly", "moon_shard", "daedalus", "satanic", "overwhelming_blink"],
+    items: ["manta", "butterfly", "moon_shard", "greater_crit", "satanic", "overwhelming_blink", "aghanims_shard", "fallen_sky"],
     author: "HookMaster", avatar: "/assets/heroes/spirit_breaker.png", reputation: "2 310",
     verdict: "Рекомендуется", verdictType: "recommended", votes: [69, 20, 11], date: "18 мая 2024", dateTime: "2024-05-18",
     comments: [
@@ -45,7 +46,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
   {
     id: "shadow-shaman-push", hero: "Shadow Shaman", heroImage: "/assets/heroes/shadow_shaman.png", title: "Шаман с руки",
     role: "Саппорт", roleClass: "support",
-    items: ["mask_of_madness", "desolator", "manta", "butterfly", "daedalus", "arcane_blink"],
+    items: ["mask_of_madness", "desolator", "manta", "butterfly", "greater_crit", "arcane_blink", "ultimate_scepter", "defiant_shell"],
     author: "TotemPower", avatar: "/assets/heroes/shadow_shaman.png", reputation: "760",
     verdict: "Рекомендуется", verdictType: "recommended", votes: [74, 18, 8], date: "17 мая 2024", dateTime: "2024-05-17",
     comments: [
@@ -56,7 +57,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
   {
     id: "leshrac-zones", hero: "Leshrac", heroImage: "/assets/heroes/leshrac.png", title: "Физический Лешрак",
     role: "Мид", roleClass: "mid",
-    items: ["shadow_blade", "daedalus", "butterfly", "moon_shard", "satanic", "overwhelming_blink"],
+    items: ["invis_sword", "greater_crit", "butterfly", "moon_shard", "satanic", "overwhelming_blink"],
     author: "ArcWardenX", avatar: "/assets/heroes/enigma.png", reputation: "1 530",
     verdict: "Нейтрально", verdictType: "neutral", votes: [46, 34, 20], date: "16 мая 2024", dateTime: "2024-05-16",
     comments: [
@@ -83,48 +84,22 @@ const seedHeroes: Array<Omit<HeroOption, "id">> = [
 
 export const demoHeroes: HeroOption[] = seedHeroes.map((hero) => ({ ...hero, id: heroSlug(hero.heroImage) }));
 
-export const itemNames: Record<string, string> = {
-  aether_lens: "Aether Lens",
-  arcane_blink: "Arcane Blink",
-  bfury: "Battle Fury",
-  blade_mail: "Blade Mail",
-  bloodstone: "Bloodstone",
-  butterfly: "Butterfly",
-  daedalus: "Daedalus",
-  desolator: "Desolator",
-  heart: "Heart of Tarrasque",
-  kaya: "Kaya",
-  lotus_orb: "Lotus Orb",
-  manta: "Manta Style",
-  mask_of_madness: "Mask of Madness",
-  monkey_king_bar: "Monkey King Bar",
-  moon_shard: "Moon Shard",
-  overwhelming_blink: "Overwhelming Blink",
-  pipe: "Pipe of Insight",
-  power_treads: "Power Treads",
-  ring_of_health: "Ring of Health",
-  satanic: "Satanic",
-  shadow_blade: "Shadow Blade",
-  skadi: "Eye of Skadi",
-  yasha_and_kaya: "Yasha and Kaya",
-};
+/** The Dota shop by id: what the picker offers, and what icons and labels resolve against. */
+const itemsById = new Map(dotaItems.map((item) => [item.id, item]));
 
-/** Every item with an icon in /public/assets/items — exactly what the picker can offer. */
-export const itemOptions = Object.keys(itemNames);
+/** Every item the picker can offer, alphabetical; search and categories narrow it down. */
+export const itemOptions: DotaItem[] = dotaItems;
 
-/** A build can hold no more than a full Dota inventory. */
-export const maxItemsPerBuild = 6;
-
-/** Collapsed, the comment list stops here so the composer stays in view. */
-export const collapsedCommentCount = 2;
-
-export const roleOptions: Array<{ value: RoleFilter; label: string }> = [
-  { value: "all", label: "Все позиции" },
-  { value: "carry", label: "Керри" },
-  { value: "mid", label: "Мид" },
-  { value: "offlane", label: "Оффлейн" },
-  { value: "support", label: "Саппорт" },
+export const itemCategoryOptions: Array<{ value: ItemFilter; label: string }> = [
+  { value: "all", label: "Все" },
+  { value: "basic", label: "Базовые" },
+  { value: "upgrade", label: "Составные" },
+  { value: "consumable", label: "Расходники" },
+  { value: "neutral", label: "Нейтральные" },
 ];
+
+/** A full Dota inventory: six carried items plus the scepter, shard and neutral slots. */
+export const maxItemsPerBuild = 9;
 
 export const voteOptions: Array<{ value: Vote; icon: string; label: string; hint: string }> = [
   { value: "positive", icon: "👍", label: "Лайк", hint: "Билд хороший" },
@@ -161,7 +136,15 @@ export function createLocalBuild(hero: HeroOption, title: string, items: string[
 
 /** Readable item name for alt text and tooltips; unknown ids degrade to their slug. */
 export function itemLabel(item: string): string {
-  return itemNames[item] ?? item.replaceAll("_", " ");
+  return itemsById.get(item)?.name ?? item.replaceAll("_", " ");
+}
+
+/**
+ * Icon for an item id. Builds saved before a patch can hold ids the catalog no longer
+ * lists, and Valve's CDN still serves those, so the id itself is the fallback.
+ */
+export function itemImage(item: string): string {
+  return itemsById.get(item)?.image ?? `${itemImageBase}/${item}.png`;
 }
 
 /** Asset slug behind a hero image path: "/assets/heroes/pudge.png" -> "pudge". */

@@ -1,0 +1,126 @@
+/* Build sheet: a borderless hero portrait and an editorial inventory. */
+body, html[data-theme="light"] body { background-image: none; }
+.topbar { height: 80px; background: var(--page); backdrop-filter: none; }
+.topbar-inner { width: min(calc(100% - 64px), 1472px); gap: 28px; }
+.wordmark { display: flex; align-items: baseline; padding: 0; border: 0; background: none; font-size: 36px; font-weight: 700; letter-spacing: -1.6px; }
+.wordmark span { color: var(--accent); }
+.header-nav { height: 100%; margin-left: 52px; padding: 0; gap: 44px; border: 0; border-radius: 0; background: none; }
+.header-nav button { position: relative; padding: 0; border-radius: 0; color: var(--text-soft); font-size: 18px; font-weight: 400; }
+.header-nav button.active { background: none; color: var(--text); }
+.header-nav button.active::after { content: ""; position: absolute; right: 0; left: 0; top: calc(50% + 15px); height: 2px; background: var(--accent); }
+.theme-toggle { margin-left: auto; border: 0; border-radius: 4px; background: none; color: var(--text-dim); }
+.header-actions { gap: 14px; }
+.profile-button { border-radius: 4px; }
+.random-main { width: min(calc(100% - 112px), 1408px); padding: 0 0 48px; }
+.all-builds-main { width: min(calc(100% - 64px), 1472px); }
+.random-card { position: relative; display: grid; grid-template-columns: minmax(280px, .95fr) minmax(0, 1.75fr); grid-template-rows: 1fr auto; column-gap: 38px; height: auto; min-height: 550px; overflow: visible; border: 0; border-bottom: 1px solid var(--stroke-strong); border-radius: 0; background: none; box-shadow: none; }
+html[data-theme="light"] .random-card { box-shadow: none; }
+.dota-build-panel { grid-column: 2; grid-row: 1; min-height: 0; padding: 48px 0 24px; overflow: visible; border: 0; background: none; }
+.dota-build-title { margin: 0; padding: 0; border: 0; color: var(--text); font-family: Georgia, "Times New Roman", serif; font-size: clamp(40px, 4.7vw, 72px); font-weight: 400; line-height: 1.1; letter-spacing: -.035em; overflow-wrap: anywhere; text-wrap: balance; }
+.dota-panel-header { display: block; margin-top: 24px; }
+.dota-hero-identity { display: block; }
+.dota-hero-identity h2 { margin: 0; color: var(--text-soft); font-size: 21px; line-height: 1.4; font-weight: 500; letter-spacing: 0; }
+.dota-panel-meta { margin-top: 5px; }
+.build-author { color: var(--text-dim); font-size: 18px; }
+.build-author strong { color: var(--accent); font-weight: 400; }
+.dota-inventory { margin-top: 26px; }
+/* The build laid out like a Dota inventory: neutral, six carried slots, scepter and shard. */
+.dota-inventory-grid { --slot: 92px; display: grid; grid-template-columns: repeat(3, auto); justify-content: start; align-items: center; gap: 16px; }
+.inventory-main { display: grid; grid-template-columns: repeat(3, var(--slot)); gap: 7px; }
+.inventory-column { display: grid; gap: 7px; }
+.inventory-slot { position: relative; width: var(--slot); aspect-ratio: 11 / 8; overflow: hidden; border: 1px solid var(--stroke-strong); background: var(--surface); }
+.inventory-slot img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.inventory-slot.empty { border-style: dashed; border-color: var(--stroke); background: color-mix(in srgb, var(--surface) 55%, transparent); }
+/* Neutrals drop in their own round frame in game, so they keep it here. */
+.inventory-slot.neutral { width: calc(var(--slot) * 0.8); aspect-ratio: 1; border-radius: 50%; }
+.inventory-slot .slot-placeholder { opacity: 0.22; filter: grayscale(1); }
+.hero-showcase { grid-column: 1; grid-row: 1 / 3; min-height: 550px; border: 0; background: none; }
+.hero-viewer { inset: 8px -24px 24px; }
+.hero-model-loading { border: 0; border-radius: 3px; background: var(--surface); }
+.rating-panel { grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0 38px; border: 0; background: none; }
+.rating-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rating-button { min-height: 44px; padding: 8px 10px; gap: 8px; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--text-soft); font-size: 14px; white-space: nowrap; }
+.rating-button:hover { transform: none; border-color: var(--stroke); background: var(--surface); color: var(--text); }
+.rating-button.selected { border-color: var(--stroke-strong); box-shadow: none; background: var(--surface-2); }
+.rating-button.selected.positive, .rating-button.selected.situational, .rating-button.selected.negative { border-color: var(--stroke-strong); box-shadow: none; }
+.verdict-dot { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: var(--text-dim); }
+.positive .verdict-dot { background: var(--green); }
+.situational .verdict-dot { background: var(--amber); }
+.negative .verdict-dot { background: var(--red); }
+.verdict-percentage { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.next-build-button { min-height: 44px; padding: 0; margin-left: auto; border: 0; border-radius: 0; background: none; color: var(--accent); font-size: 17px; font-weight: 400; }
+.next-build-button span { display: inline-block; margin-left: 8px; font-size: 21px; }
+.next-build-button:hover { background: none; color: var(--text); }
+.discussion-section { width: 100%; padding-top: 12px; }
+.discussion-section .build-comments { margin: 0; padding: 0; border: 0; }
+.discussion-section .build-comments-head { margin: 0; min-height: 28px; justify-content: flex-end; }
+.discussion-section .build-comments-head > .section-label { display: none; }
+.discussion-section .random-comment-count { font-size: 12px; }
+.discussion-section .random-comment-count i { display: none; }
+.discussion-section .comment-list { gap: 0; }
+.discussion-section .comment-item { padding: 20px 0; border: 0; border-bottom: 1px solid var(--stroke); border-radius: 0; background: none; gap: 24px; }
+.discussion-section .comment-item:last-child { border-bottom: 0; }
+.discussion-section .comment-item > img { width: 64px; height: 64px; flex-basis: 64px; border: 1px solid var(--stroke-strong); border-radius: 0; object-fit: cover; }
+.discussion-section .comment-item-head { justify-content: flex-start; gap: 30px; }
+.discussion-section .comment-item-head strong { font-size: 17px; font-weight: 500; }
+.discussion-section .comment-item-head span { font-size: 14px; }
+.discussion-section .comment-item p { max-width: 1000px; margin-top: 8px; font-size: 17px; line-height: 1.55; }
+.discussion-section .comment-composer { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: start; gap: 24px; margin-bottom: 28px; padding: 0; border: 0; border-radius: 0; background: none; }
+.discussion-section .comment-composer::before { content: "?"; display: grid; place-items: center; height: 64px; border: 1px solid var(--stroke-strong); border-radius: 2px; color: var(--text-dim); font-size: 30px; }
+.discussion-section .comment-composer textarea { grid-column: 2; min-height: 64px; padding: 18px; border: 1px solid var(--stroke-strong); border-radius: 3px; background: none; font-size: 16px; }
+.discussion-section .comment-composer textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.discussion-section .comment-composer-footer { grid-column: 3; position: relative; margin: 0; min-height: 64px; }
+.discussion-section .comment-composer-footer > span { position: absolute; top: 100%; right: 10px; font-size: 12px; }
+.discussion-section .comment-composer-footer button { padding: 0 12px; min-height: 44px; border-radius: 3px; background: none; color: var(--accent); font-size: 16px; font-weight: 400; }
+.discussion-section .comment-composer-footer button:not(:disabled):hover { background: var(--surface-2); }
+@media (max-width: 1180px) {
+  .topbar-inner, .all-builds-main { width: calc(100% - 48px); }
+  .random-main { width: calc(100% - 64px); }
+  .header-nav { margin-left: 24px; gap: 28px; }
+  .random-card { grid-template-columns: minmax(240px, .85fr) minmax(0, 1.5fr); column-gap: 24px; }
+  .dota-inventory-grid { --slot: 76px; gap: 12px; }
+  .rating-panel { gap: 8px; }
+}
+@media (max-width: 800px) {
+  .topbar { height: auto; position: relative; }
+  .topbar-inner { display: grid; grid-template-columns: 1fr 40px auto; padding: 16px 0 0; gap: 12px; }
+  .wordmark { grid-column: 1; grid-row: 1; width: fit-content; font-size: 28px; }
+  .theme-toggle { grid-column: 2; grid-row: 1; display: grid; width: 40px; height: 40px; margin: 0; }
+  .header-actions { grid-column: 3; grid-row: 1; }
+  .header-nav { grid-column: 1 / -1; grid-row: 2; width: auto; height: 46px; margin: 0; gap: 28px; }
+  .header-nav button { flex: none; padding: 0; font-size: 16px; }
+  .random-main { width: calc(100% - 48px); }
+  .random-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; min-height: 0; gap: 0; }
+  .dota-build-panel { grid-column: 1; grid-row: 1; padding: 30px 0 0; }
+  .dota-build-title { font-size: clamp(36px, 7vw, 56px); }
+  .dota-panel-header { margin-top: 18px; }
+  .dota-hero-identity h2 { font-size: 18px; }
+  .build-author { font-size: 16px; }
+  .dota-inventory { margin-top: 24px; }
+  .dota-inventory-grid { --slot: 68px; gap: 10px; }
+  .hero-showcase { grid-column: 1; grid-row: 2; min-height: 360px; height: clamp(360px, 65vw, 460px); border: 0; }
+  .hero-viewer { inset: 0; }
+  .rating-panel { grid-column: 1; grid-row: 3; padding: 12px 0 24px; gap: 12px; }
+  .rating-actions { justify-content: space-between; width: 100%; gap: 0; }
+  .rating-button { min-height: 44px; flex-direction: row; padding: 8px 5px; gap: 6px; font-size: 14px; }
+  .next-build-button { margin-left: auto; font-size: 16px; }
+  .discussion-section .comment-item { gap: 14px; padding: 18px 0; }
+  .discussion-section .comment-item > img { width: 42px; height: 42px; flex-basis: 42px; }
+  .discussion-section .comment-item-head { flex-wrap: wrap; gap: 4px 16px; }
+  .discussion-section .comment-item-head strong, .discussion-section .comment-item p { font-size: 16px; }
+  .discussion-section .comment-item-head span { font-size: 12px; }
+  .discussion-section .comment-composer { grid-template-columns: 42px minmax(0, 1fr); gap: 12px 14px; }
+  .discussion-section .comment-composer::before { height: 48px; font-size: 24px; }
+  .discussion-section .comment-composer textarea { min-height: 80px; padding: 12px; }
+  .discussion-section .comment-composer-footer { grid-column: 2; min-height: 44px; }
+  .discussion-section .comment-composer-footer > span { position: static; }
+}
+@media (max-width: 520px) {
+  .dota-inventory-grid { --slot: 58px; gap: 8px; }
+}
+@media (max-width: 380px) {
+  .topbar-inner, .random-main, .all-builds-main { width: calc(100% - 32px); }
+  .wordmark { font-size: 25px; }
+  .rating-button { padding-inline: 2px; gap: 5px; font-size: 13px; }
+  .dota-inventory-grid { --slot: 52px; gap: 7px; }
+}

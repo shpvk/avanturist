@@ -55,7 +55,9 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /<title>BuildVerdict — оцени билды Dota 2<\/title>/i);
   assert.doesNotMatch(html, /Поиск билдов и героев/);
   assert.match(html, /Добавить билд/);
-  assert.match(html, /href="\/signin-with-chatgpt\?return_to=%2F"/);
+  // The header carries a profile icon; /profile is what sends a guest on to the sign-in form.
+  assert.match(html, /href="\/profile" class="profile-button"/);
+  assert.doesNotMatch(html, /signin-with-chatgpt/);
   assert.doesNotMatch(html, /type="password"|Продолжить с Google/);
   assert.match(html, /Anti-Mage/);
   assert.match(html, /Случайный билд/);
@@ -67,16 +69,18 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /3 комментария</);
   assert.match(html, /class="comment-item"/);
   assert.match(html, /Каю на антимаге/);
-  // Collapsed by default: only the first two comments render, the rest sit behind the toggle.
-  // The third one still travels in the RSC payload, so look at the rendered list itself.
-  assert.equal((html.match(/class="comment-item"/g) ?? []).length, 2);
-  assert.doesNotMatch(commentList(html), /Муншард последним предметом/);
-  assert.match(html, /Показать все \(3\)/);
-  assert.match(html, /aria-expanded="false" aria-controls="comment-list-anti-mage-mana-pressure"/);
+  // The whole thread renders at once — there is nothing left to expand.
+  assert.equal((html.match(/class="comment-item"/g) ?? []).length, 3);
+  assert.match(commentList(html), /Муншард последним предметом/);
+  assert.doesNotMatch(html, /Показать все|Свернуть|comments-toggle|comments-more/);
+  // The composer comes before the thread it belongs to.
+  assert.ok(html.indexOf('class="comment-composer"') < html.indexOf('class="comment-list"'));
   assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
   assert.match(html, /Ситуативно/);
   assert.match(html, /alt="Bloodstone"/);
-  assert.match(html, /aria-label="Лайк 82%, ситуативно 12%, дизлайк 6%"/);
+  assert.match(html, /aria-label="За 82%"/);
+  assert.match(html, /aria-label="Ситуативно 12%"/);
+  assert.match(html, /aria-label="Против 6%"/);
   assert.doesNotMatch(html, /Комментарий автора|Комментарий под билдом/);
   assert.match(html, /aria-label="Включить светлую тему"/);
   assert.match(html, /class="theme-icon"/);
@@ -91,13 +95,21 @@ test("renders one random build with three vote actions", async () => {
   const html = await response.text();
   assert.equal((html.match(/class="random-card dota-stage"/g) ?? []).length, 1);
   assert.match(html, /class="hero-viewer loading"/);
-  assert.match(html, /\/assets\/heroes\/renders\/antimage\.webp/);
+  assert.doesNotMatch(html, /hero-model-poster/);
+  assert.doesNotMatch(html, /\/assets\/heroes\/renders\/antimage\.webp/);
   assert.doesNotMatch(html, /Включить 3D/);
   assert.match(html, /Загружаем 3D-модель/);
-  assert.match(html, /class="item-row inventory"/);
+  assert.match(html, /class="dota-inventory-grid"/);
   assert.doesNotMatch(html, /class="brand"|class="hero-nameplate"/);
   assert.equal((html.match(/class="rating-button /g) ?? []).length, 3);
-  assert.equal((html.match(/class="vote-bar"/g) ?? []).length, 1);
+  assert.equal((html.match(/class="vote-bar"/g) ?? []).length, 0);
+  assert.match(html, /<h1 class="dota-build-title">Антимаг без антимагии<\/h1>/);
+  assert.equal((html.match(/class="inventory-slot main"/g) ?? []).length, 6);
+  // The neutral and the shard sit in their own slots; Anti-Mage carries no scepter, so that one is empty.
+  assert.match(html, /class="inventory-slot neutral"/);
+  assert.match(html, /class="inventory-slot shard"/);
+  assert.match(html, /class="inventory-slot scepter empty"/);
+  assert.match(html, /alt="Conjurer&#x27;s Catalyst"/);
 });
 
 const apiHeroes = [
@@ -137,16 +149,16 @@ test("renders the build the API returned, not the seeded demo one", async () => 
   assert.match(html, /<h2>Pudge<\/h2>/);
   assert.doesNotMatch(html, /Антимаг без антимагии/);
   assert.match(html, /alt="Blade Mail"/);
-  assert.match(html, /<strong>HookMaster<\/strong>/);
+  assert.match(html, /<strong title="Репутация: 3">HookMaster<\/strong>/);
 });
 
 test("derives the tally, verdict, reputation and dates the API does not store", async () => {
   const html = await renderWithApi();
   // Three likes and one dislike out of four votes.
-  assert.match(html, /aria-label="Лайк 75%, ситуативно 0%, дизлайк 25%"/);
-  assert.match(html, /Репутация: <!-- -->3<!-- --> <b>▲<\/b>/);
-  assert.match(html, /<time class="random-build-date" dateTime="2026-01-05">5 января 2026<\/time>/);
-  assert.match(html, /class="role-badge offlane">Оффлейн</);
+  assert.match(html, /aria-label="За 75%"/);
+  assert.match(html, /aria-label="Ситуативно 0%"/);
+  assert.match(html, /aria-label="Против 25%"/);
+  assert.match(html, /title="Репутация: 3"/);
   assert.match(html, /1 комментарий</);
   assert.match(html, /<span>6 января<\/span>/);
 });

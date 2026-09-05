@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AddBuildDialog } from "./_components/add-build-dialog";
 import { AllBuildsView, defaultFeedFilters } from "./_components/all-builds-view";
 import { RandomBuildView } from "./_components/random-build-view";
 import { SiteHeader } from "./_components/site-header";
 import { useTheme } from "./_hooks/use-theme";
-import { ApiError, createBuild, createComment, createVote } from "./_lib/api";
+import { ApiError, createBuild, createComment, createVote, fetchAccount } from "./_lib/api";
 import { authorAvatar, mapBuild, mapComment } from "./_lib/api-mapping";
 import { createLocalBuild } from "./_lib/build-data";
 import { reputationValue } from "./_lib/format";
@@ -46,15 +46,30 @@ export default function BuildVerdictClient({ initialUser = null, initialBuilds, 
   const [isAddBuildOpen, setIsAddBuildOpen] = useState(false);
   const [filters, setFilters] = useState<FeedFilters>(defaultFeedFilters);
   const [theme, toggleTheme] = useTheme();
+  // ChatGPT hands the identity over in request headers; our own sign-in lives in a session
+  // cookie the server render never sees, so the browser asks the API who it is.
+  const [user, setUser] = useState<AuthUser | null>(initialUser);
+
+  useEffect(() => {
+    if (initialUser) return;
+    let cancelled = false;
+
+    // Nobody signed in, or the API is asleep: the header just keeps the plain profile icon.
+    fetchAccount().then(
+      (account) => { if (!cancelled) setUser({ name: account.displayName, email: account.email }); },
+      () => {},
+    );
+
+    return () => { cancelled = true; };
+  }, [initialUser]);
 
   // Keyed by build id, so a vote or an unsent draft survives shuffling and view switches.
   const [votes, setVotes] = useState<Record<string, Vote>>({});
   // A vote still in flight is added to the bar locally; the API's own tally replaces it.
   const [pendingVotes, setPendingVotes] = useState<Record<string, Vote>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [expandedCommentsId, setExpandedCommentsId] = useState<string | null>(null);
 
-  const authorName = (initialUser?.name ?? anonymousAuthor).slice(0, maxAuthorLength);
+  const authorName = (user?.name ?? anonymousAuthor).slice(0, maxAuthorLength);
   const currentBuild = useMemo(
     () => builds.find((build) => build.id === currentBuildId) ?? builds[0],
     [builds, currentBuildId],
@@ -147,22 +162,20 @@ export default function BuildVerdictClient({ initialUser = null, initialBuilds, 
 
   return (
     <div className="site-shell">
-      <SiteHeader view={view} theme={theme} user={initialUser} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
+      <SiteHeader view={view} theme={theme} user={user} onViewChange={setView} onThemeToggle={toggleTheme} onAddBuild={() => setIsAddBuildOpen(true)} />
       {view === "random" && currentBuild ? (
         <RandomBuildView
           build={currentBuild}
           vote={votes[currentBuild.id] ?? null}
           pendingVote={pendingVotes[currentBuild.id] ?? null}
           draft={drafts[currentBuild.id] ?? ""}
-          commentsExpanded={expandedCommentsId === currentBuild.id}
           onVote={castVote}
           onNext={showNextBuild}
           onDraftChange={setDraft}
           onAddComment={addComment}
-          onCommentsExpandedChange={(expanded) => setExpandedCommentsId(expanded ? currentBuild.id : null)}
         />
       ) : (
-        <AllBuildsView builds={builds} filters={filters} onFiltersChange={setFilters} onOpenBuild={openBuild} />
+        <AllBuildsView builds={builds} heroes={heroes} filters={filters} onFiltersChange={setFilters} onOpenBuild={openBuild} />
       )}
       {isAddBuildOpen && <AddBuildDialog heroes={heroes} onClose={() => setIsAddBuildOpen(false)} onSubmit={addBuild} />}
     </div>

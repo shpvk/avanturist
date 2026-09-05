@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./home.css";
 import { defaultTheme, themeBootstrapScript } from "./_lib/theme";
 
 export const metadata: Metadata = {

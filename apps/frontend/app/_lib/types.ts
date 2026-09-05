@@ -1,9 +1,12 @@
+import type { ItemCategory } from "./dota-items";
+
 export type View = "random" | "all";
 export type Vote = "positive" | "situational" | "negative";
 export type Theme = "dark" | "light";
 export type FeedSort = "new" | "popular";
 export type RoleClass = "carry" | "offlane" | "support" | "mid";
-export type RoleFilter = "all" | RoleClass;
+/** The item picker's category tabs: one per catalog category, plus "show everything". */
+export type ItemFilter = "all" | ItemCategory;
 
 /** Like / situational / dislike, in the order the vote bar paints them. */
 export type VoteTally = [number, number, number];
@@ -53,9 +56,10 @@ export type Build = {
   createdAt: string;
 };
 
-/** Filters for the "Все билды" feed, kept in one object so they survive view switches. */
+/** Filters for the "Билды" feed, kept in one object so they survive view switches. */
 export type FeedFilters = {
   search: string;
-  role: RoleFilter;
+  /** A hero id, or "all" for the whole feed. */
+  hero: string;
   sort: FeedSort;
 };
