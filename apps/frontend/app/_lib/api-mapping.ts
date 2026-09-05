@@ -18,6 +18,9 @@ const avatarPool = [
   "/assets/heroes/spirit_breaker.png",
 ];
 
+/** A hero id with no entry in the catalog still resolves to a portrait on Valve's CDN. */
+const heroImageBase = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes";
+
 /** A build needs this share of likes before it is called recommended. */
 const recommendedShare = 60;
 const justNowMs = 60_000;
@@ -93,7 +96,7 @@ export function formatReputation(value: number): string {
 }
 
 export function mapHeroes(heroes: ApiHero[]): HeroOption[] {
-  return heroes.map((hero) => ({ id: hero.id, hero: hero.name, heroImage: hero.image, ...heroRole(hero.id) }));
+  return heroes.map((hero) => ({ id: hero.id, hero: hero.name, heroImage: hero.image, ...heroRole(hero.id, hero.roles) }));
 }
 
 export function mapComment(comment: ApiComment, now = new Date()): BuildComment {
@@ -125,7 +128,7 @@ export function mapBuild(build: ApiBuild, { heroes, reputation = 0, now = new Da
     id: build.id,
     heroId: build.heroId,
     hero: hero?.hero ?? build.heroId,
-    heroImage: hero?.heroImage ?? `/assets/heroes/${build.heroId}.png`,
+    heroImage: hero?.heroImage ?? `${heroImageBase}/${build.heroId}.png`,
     role: hero?.role ?? heroRole(build.heroId).role,
     roleClass: hero?.roleClass ?? heroRole(build.heroId).roleClass,
     title: build.title,

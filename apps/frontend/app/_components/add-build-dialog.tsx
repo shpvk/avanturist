@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { itemLabel, itemOptions, maxItemsPerBuild } from "../_lib/build-data";
+import { itemCategoryOptions, itemImage, itemLabel, itemOptions, maxItemsPerBuild } from "../_lib/build-data";
+import { filterItems } from "../_lib/item-filter";
 import { useDialogA11y } from "../_hooks/use-dialog-a11y";
 import type { CreateBuildPayload } from "../_lib/api-types";
-import type { HeroOption } from "../_lib/types";
+import type { HeroOption, ItemFilter } from "../_lib/types";
 
 /** Mirrors CreateBuildDto on the API: @Length(3, 80) on the title. */
 const minTitleLength = 3;
@@ -20,9 +21,14 @@ type AddBuildDialogProps = {
 
 export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<ItemFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const dialogRef = useDialogA11y<HTMLElement>(onClose);
+
+  // The catalog is the whole Dota shop, so the grid only ever renders the current slice.
+  const visibleItems = useMemo(() => filterItems(itemOptions, { query, category }), [query, category]);
 
   const toggleItem = (item: string) => {
     setError(null);
@@ -61,11 +67,27 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
         <form onSubmit={handleSubmit}>
           <label className="form-field"><span>Герой</span><select name="hero" defaultValue={heroes[0]?.id} required>{heroes.map((hero) => <option key={hero.id} value={hero.id}>{hero.hero}</option>)}</select></label>
           <label className="form-field"><span>Название</span><input name="title" type="text" minLength={minTitleLength} maxLength={maxTitleLength} placeholder="Придумайте название сборки" required onChange={() => setError(null)} /></label>
-          <fieldset className="item-picker"><legend>Предметы <small>от 1 до {maxItemsPerBuild}</small></legend><div>{itemOptions.map((item) => {
-            const selected = selectedItems.includes(item);
-            const limitReached = selectedItems.length >= maxItemsPerBuild && !selected;
-            return <button key={item} className={selected ? "selected" : ""} type="button" onClick={() => toggleItem(item)} aria-pressed={selected} aria-label={`${selected ? "Убрать" : "Выбрать"} предмет ${itemLabel(item)}`} disabled={limitReached}><Image src={`/assets/items/${item}.png`} alt="" width={88} height={64} unoptimized /></button>;
-          })}</div></fieldset>
+          <fieldset className="item-picker">
+            <legend>Предметы <small>от 1 до {maxItemsPerBuild}</small></legend>
+            <div className="item-picker-filters">
+              <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="Поиск предмета" aria-label="Поиск предмета" />
+              <div className="item-categories" role="group" aria-label="Категории предметов">{itemCategoryOptions.map((option) => (
+                <button key={option.value} className={option.value === category ? "selected" : ""} type="button" aria-pressed={option.value === category} onClick={() => setCategory(option.value)}>{option.label}</button>
+              ))}</div>
+            </div>
+            {selectedItems.length > 0 && (
+              // Chosen items stay in reach even after the search moves their icon out of the grid.
+              <ul className="item-picker-selected">{selectedItems.map((item) => (
+                <li key={item}><button type="button" onClick={() => toggleItem(item)} aria-label={`Убрать предмет ${itemLabel(item)}`}><Image src={itemImage(item)} alt="" width={88} height={64} unoptimized />{itemLabel(item)}<span aria-hidden="true">×</span></button></li>
+              ))}</ul>
+            )}
+            <div className="item-picker-grid">{visibleItems.map((item) => {
+              const selected = selectedItems.includes(item.id);
+              const limitReached = selectedItems.length >= maxItemsPerBuild && !selected;
+              return <button key={item.id} className={selected ? "selected" : ""} type="button" onClick={() => toggleItem(item.id)} aria-pressed={selected} aria-label={`${selected ? "Убрать" : "Выбрать"} предмет ${item.name}`} title={item.name} disabled={limitReached}><Image src={item.image} alt="" width={88} height={64} loading="lazy" unoptimized /></button>;
+            })}</div>
+            {visibleItems.length === 0 && <p className="item-picker-empty">Ничего не нашлось — попробуйте другое название.</p>}
+          </fieldset>
           {error && <p className="sr-only" role="alert">{error}</p>}
           <div className="dialog-actions"><span>{selectedItems.length}{`/${maxItemsPerBuild} предметов`}</span><button className="cancel-button" type="button" onClick={onClose}>Отмена</button><button className="submit-build-button" type="submit" disabled={selectedItems.length === 0 || isSaving}>Добавить билд</button></div>
         </form>
