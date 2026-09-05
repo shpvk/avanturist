@@ -15,6 +15,7 @@
     "frontend:build": "npm --prefix apps/frontend run build",
     "frontend:start": "npm --prefix apps/frontend run start",
     "frontend:test": "npm --prefix apps/frontend run test",
+    "dota:sync": "node scripts/sync-dota-constants.mjs",
     "db:up": "docker compose up -d db redis mailpit",
     "db:down": "docker compose down"
   },
