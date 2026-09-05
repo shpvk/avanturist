@@ -29,9 +29,22 @@ build publishes only the runtime GLB files.
 
 ## Runtime and production
 
-`app/hero-model-viewer.tsx` loads GLB through Three.js `GLTFLoader`. Dragging rotates the
-model; the wheel adds inertial horizontal rotation. If WebGL or the GLB request fails, the
-viewer leaves the static poster visible.
+`app/_hero-model/hero-scene.ts` loads GLB through Three.js `GLTFLoader`. Dragging rotates
+the model; the wheel adds inertial horizontal rotation. If WebGL, the GLB request or the
+embedded textures fail, the viewer leaves the static poster visible instead of showing an
+untextured white silhouette — `GLTFLoader` swallows an image it cannot load and returns a
+material with no `map`, so the scene checks for that explicitly.
+
+## Unposed weapon slots
+
+Valve's reference models pose the body, the armour and the hats, but not the weapon
+slots: the game attaches those to hand bones at runtime. In the file's own rest pose
+Anti-Mage's blades lie flat on the floor under his feet, Pudge's hook stands about a metre
+to his right, and Phantom Assassin's dagger sinks halfway through the ground. The .glb
+carries nothing to fix them with — its single animation take (`Take 001`) has no channels
+— so the scene drops every mesh whose name ends in `_weapon` or `_offhand` and frames the
+hero itself. Belt knives and other props the source does pose (`pudge_belt_knives`) stay.
+A newly added hero follows the same naming, so nothing has to be listed per hero.
 
 Today the GLB URLs are same-origin static assets, so local, preview and production builds
 behave identically without relying on a third-party model host. When the catalogue grows,

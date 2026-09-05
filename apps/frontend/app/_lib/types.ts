@@ -8,17 +8,20 @@ export type RoleFilter = "all" | RoleClass;
 /** Like / situational / dislike, in the order the vote bar paints them. */
 export type VoteTally = [number, number, number];
 
-export type AuthUser = {
-  name: string;
-  email: string;
-};
-
 export type BuildComment = {
   id: string;
   author: string;
+  /** Нет у демо-комментариев и у ещё не сохранённого черновика. */
+  authorId?: string;
   avatar: string;
   date: string;
   text: string;
+  /** Скрыт модератором. В ветке остаётся только у администратора. */
+  hidden?: boolean;
+  /** Мут автора: приходит вместе с веткой, но только администратору. */
+  authorMuted?: boolean;
+  /** `null` — мут бессрочный. */
+  authorMutedUntil?: string | null;
 };
 
 /** A hero as the UI needs it: API identity plus the role badge the API has no opinion on. */
