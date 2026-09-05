@@ -5,7 +5,6 @@ import test from "node:test";
 // be exercised straight from source, without a bundler in the way.
 import { commentsLabel, reputationValue } from "../app/_lib/format.ts";
 import { votePercentages, voteBarLabel } from "../app/_lib/votes.ts";
-import { chatGPTSignInPath, chatGPTSignOutPath, safeRelativeReturnPath } from "../app/_lib/auth-paths.ts";
 import { createId } from "../app/_lib/id.ts";
 
 test("commentsLabel picks the Russian plural form", () => {
@@ -47,21 +46,6 @@ test("votePercentages survives a build with no votes at all", () => {
 
 test("voteBarLabel reads out every share", () => {
   assert.equal(voteBarLabel([82, 12, 6]), "Лайк 82%, ситуативно 12%, дизлайк 6%");
-});
-
-test("safeRelativeReturnPath refuses anything that leaves the site", () => {
-  assert.equal(safeRelativeReturnPath("/builds?sort=new"), "/builds?sort=new");
-  assert.equal(safeRelativeReturnPath("https://evil.example/"), "/");
-  assert.equal(safeRelativeReturnPath("//evil.example/"), "/");
-  assert.equal(safeRelativeReturnPath("builds"), "/");
-  assert.equal(safeRelativeReturnPath("/signin-with-chatgpt"), "/");
-  assert.equal(safeRelativeReturnPath("/callback"), "/");
-});
-
-test("auth links encode the return path", () => {
-  assert.equal(chatGPTSignInPath("/"), "/signin-with-chatgpt?return_to=%2F");
-  assert.equal(chatGPTSignOutPath(), "/signout-with-chatgpt?return_to=%2F");
-  assert.equal(chatGPTSignInPath("https://evil.example"), "/signin-with-chatgpt?return_to=%2F");
 });
 
 test("createId never repeats itself", () => {

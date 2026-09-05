@@ -16,32 +16,49 @@ datasource db {
 model User {
   id String @id @default(uuid())
 
-  email    String @unique()
-  password String
+  email    String  @unique()
+  password String?
 
-  displayName String
+  displayName String  @map("display_name")
   picture     String?
 
   role UserRole @default(REGULAR)
 
-  isVerified         Boolean @default(false) @map("is_verified")
-  isTwoFactorEnabled Boolean @default(false) @map("is_two_factor_enabled")
+  isVerified Boolean @default(false) @map("is_verified")
 
   method AuthMethod
 
+  // Мут закрывает только комментарии: читать, голосовать и публиковать билды
+  // пользователь по-прежнему может. `mutedAt` — признак мута, `mutedUntil`
+  // пустой у бессрочного, поэтому «не замучен» и «замучен навсегда» не
+  // сливаются в одно значение.
+  mutedAt    DateTime? @map("muted_at")
+  mutedUntil DateTime? @map("muted_until")
+  muteReason String?   @map("mute_reason")
+
+  mutedBy   User?   @relation("UserMute", fields: [mutedById], references: [id], onDelete: SetNull)
+  mutedById String? @map("muted_by_id")
+  mutedUsers User[] @relation("UserMute")
+
   accounts Account[]
+  builds   Build[]
+  comments Comment[]
+  // Скрытые этим админом комментарии: связь переживает удаление админа.
+  moderatedComments Comment[] @relation("CommentModeration")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([mutedById])
   @@map("users")
 }
 
 model Account {
   id String @id @default(uuid())
 
-  type     String
-  provider String
+  type              String
+  provider          String
+  providerAccountId String @map("provider_account_id")
 
   refreshToken String? @map("refresh_token")
   accessToken  String? @map("access_token")
@@ -49,9 +66,11 @@ model Account {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
 
+  @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -63,21 +82,55 @@ model Token {
   type      TokenType
   expiresIn DateTime  @map("expires_in")
 
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, type])
   @@map("tokens")
 }
 
 model Build {
   id String @id @default(uuid())
 
-  title String
+  title  String
   heroId String @map("hero_id")
-  items String
-  author String
+  items  String
+
+  author User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  comments Comment[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([userId])
   @@map("builds")
+}
+
+model Comment {
+  id String @id @default(uuid())
+
+  text String
+
+  build   Build  @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  buildId String @map("build_id")
+
+  author User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  // Модерация не стирает запись: скрытый комментарий остаётся виден админу и
+  // может быть возвращён в ветку.
+  deletedAt   DateTime? @map("deleted_at")
+  deletedBy   User?     @relation("CommentModeration", fields: [deletedById], references: [id], onDelete: SetNull)
+  deletedById String?   @map("deleted_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([buildId, createdAt])
+  @@index([userId])
+  @@index([deletedById])
+  @@map("comments")
 }
 
 enum UserRole {
@@ -88,11 +141,9 @@ enum UserRole {
 enum AuthMethod {
   CREDENTIALS
   GOOGLE
-  GITHUB
 }
 
 enum TokenType {
   VERIFICATION
-  TWO_FACTOR
   PASSWORD_RESET
 }

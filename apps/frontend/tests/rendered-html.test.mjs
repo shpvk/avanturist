@@ -25,7 +25,7 @@ async function renderWith(handler) {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
     const url = typeof input === "string" ? input : input.url;
-    if (url.includes("/api/")) return handler(url);
+    if (url.includes("/heroes") || url.includes("/builds")) return handler(url);
     return realFetch(input, init);
   };
 
@@ -55,7 +55,7 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /<title>BuildVerdict — оцени билды Dota 2<\/title>/i);
   assert.doesNotMatch(html, /Поиск билдов и героев/);
   assert.match(html, /Добавить билд/);
-  assert.match(html, /href="\/signin-with-chatgpt\?return_to=%2F"/);
+  assert.match(html, /href="\/login"/);
   assert.doesNotMatch(html, /type="password"|Продолжить с Google/);
   assert.match(html, /Anti-Mage/);
   assert.match(html, /Случайный билд/);
