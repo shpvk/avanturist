@@ -20,6 +20,9 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create(AppModule);
 
+    // Every controller answers under /api; the docs move aside to keep that prefix free.
+    app.setGlobalPrefix('api');
+
     const swaggerConfig = new DocumentBuilder()
         .setTitle('BuildVerdict API')
         .setDescription('API documentation')
@@ -28,7 +31,7 @@ async function bootstrap(): Promise<void> {
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
 
-    SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('docs', app, document);
 
   const config = app.get(ConfigService);
   const redis = new IORedis(config.getOrThrow<string>('REDIS_URI'));
@@ -64,7 +67,13 @@ async function bootstrap(): Promise<void> {
   )
 
   app.enableCors({
-    origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
+    // ALLOWED_ORIGIN takes a comma-separated list: the dev server does not always land
+    // on the same port as the one the deployment uses.
+    origin: config
+        .getOrThrow<string>('ALLOWED_ORIGIN')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
     credentials: true,
     exposedHeaders: ['set-cookie'],
   })

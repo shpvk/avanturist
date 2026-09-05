@@ -40,6 +40,18 @@ export class UserService {
         return user;
     }
 
+    /** Same lookup as findByEmail, but a missing user is an answer rather than an error. */
+    public async findByEmailOrNull(email: string){
+        return this.prismaService.user.findUnique({
+            where: {
+                email
+            },
+            include: {
+                accounts: true
+            }
+        })
+    }
+
     public async create(
         email: string,
         password: string,
