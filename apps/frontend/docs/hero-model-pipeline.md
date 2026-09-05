@@ -29,9 +29,15 @@ build publishes only the runtime GLB files.
 
 ## Runtime and production
 
-`app/hero-model-viewer.tsx` loads GLB through Three.js `GLTFLoader`. Dragging rotates the
-model; the wheel adds inertial horizontal rotation. If WebGL or the GLB request fails, the
-viewer leaves the static poster visible.
+`app/_hero-model/hero-model-viewer.tsx` loads GLB through Three.js `GLTFLoader`. Dragging
+rotates the model; the wheel adds inertial horizontal rotation. While loading, the viewer
+shows only the stage background and loading indicator to avoid flashing a different pose.
+If WebGL or the GLB request fails, the viewer shows the static poster as a fallback.
+
+Valve's reference models leave weapon slots unposed. The scene removes meshes ending
+in `_weapon` or `_offhand` before computing the framing bounds and releases their resources.
+Posed accessories such as `pudge_belt_knives` stay. Models whose materials all lack their
+colour textures also fall back to the poster instead of displaying a white silhouette.
 
 Today the GLB URLs are same-origin static assets, so local, preview and production builds
 behave identically without relying on a third-party model host. When the catalogue grows,

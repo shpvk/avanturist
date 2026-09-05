@@ -10,9 +10,13 @@ export type HeroSceneOptions = {
   onContextLost: () => void;
 };
 
-/** Wheel rotation feel: radians per pixel of wheel delta, and the easing per frame. */
-const radiansPerWheelPixel = 0.0022;
-const wheelEasing = 0.22;
+/**
+ * Wheel rotation feel: radians per pixel of wheel delta, and the easing per frame. One
+ * notch of a mouse wheel is ~120px, so this turns the hero by about 48° — a few flicks
+ * carry it all the way round — and the easing lands that turn in about a third of a second.
+ */
+export const radiansPerWheelPixel = 0.007;
+const wheelEasing = 0.32;
 /** One notch is ~120px; anything larger is a trackpad fling we clamp to stay controllable. */
 const maxWheelPixelsPerEvent = 180;
 const linePixels = 16;
@@ -114,16 +118,20 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
     disposers.push(() => disposeModel(THREE, model));
     signal.throwIfAborted();
 
+    let litMaterials = 0;
+    let texturedMaterials = 0;
     model.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       materials.forEach((material) => {
         material.side = THREE.DoubleSide;
         if (material instanceof THREE.MeshStandardMaterial) {
+          litMaterials += 1;
           material.color.set(0xffffff);
           material.metalness = 0.04;
           material.roughness = 0.82;
           if (material.map) {
+            texturedMaterials += 1;
             material.map.colorSpace = THREE.SRGBColorSpace;
             material.map.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
           }
@@ -131,6 +139,14 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
         material.needsUpdate = true;
       });
     });
+
+    // Every hero material in the catalogue carries a colour texture. GLTFLoader swallows
+    // an image it could not load (a CSP without blob:, a truncated .glb) and hands back a
+    // material with no map, which renders the hero as a white silhouette. Failing here
+    // keeps the poster on screen and leaves the reason in the console instead.
+    if (litMaterials > 0 && texturedMaterials === 0) throw new Error("Hero model textures failed to load");
+
+    dropUnposedProps(THREE, model);
 
     model.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(model);
@@ -236,20 +252,54 @@ function attachKeyboardRotation(canvas: HTMLCanvasElement, controls: OrbitContro
   return () => canvas.removeEventListener("keydown", handleKeyDown);
 }
 
+/**
+ * The equipment slots Valve's reference model leaves unposed. In game they are attached
+ * to hand bones at runtime; in the file itself they sit wherever the author left them —
+ * Anti-Mage's blades lie on the floor under his feet, Pudge's hook stands a metre to his
+ * right. Nothing in the .glb says where they belong (its single animation take carries no
+ * channels), so the stage shows the hero without them, which also keeps the framing box
+ * around the figure instead of around the floor.
+ */
+const unposedPropName = /_(weapon|offhand)$/;
+
+/**
+ * Removes the unposed weapons and frees them at once: they are separate skinned meshes
+ * with their own textures, so the hero loses nothing and the GPU never sees the upload.
+ */
+export function dropUnposedProps(THREE: ThreeModule, model: Group): void {
+  const props: Array<InstanceType<ThreeModule["Mesh"]>> = [];
+  model.traverse((object) => {
+    if (object instanceof THREE.Mesh && unposedPropName.test(object.name)) props.push(object);
+  });
+  const disposedTextures = new Set<InstanceType<ThreeModule["Texture"]>>();
+  props.forEach((prop) => {
+    prop.removeFromParent();
+    disposeMesh(THREE, prop, disposedTextures);
+  });
+}
+
 function disposeModel(THREE: ThreeModule, target: Group): void {
   const disposedTextures = new Set<InstanceType<ThreeModule["Texture"]>>();
   target.traverse((object) => {
     if (!(object instanceof THREE.Mesh)) return;
-    object.geometry.dispose();
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    materials.forEach((material) => {
-      Object.values(material).forEach((value) => {
-        if (!(value instanceof THREE.Texture) || disposedTextures.has(value)) return;
-        disposedTextures.add(value);
-        value.dispose();
-      });
-      material.dispose();
-    });
+    disposeMesh(THREE, object, disposedTextures);
   });
   target.removeFromParent();
+}
+
+function disposeMesh(
+  THREE: ThreeModule,
+  mesh: InstanceType<ThreeModule["Mesh"]>,
+  disposedTextures: Set<InstanceType<ThreeModule["Texture"]>>,
+): void {
+  mesh.geometry.dispose();
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  materials.forEach((material) => {
+    Object.values(material).forEach((value) => {
+      if (!(value instanceof THREE.Texture) || disposedTextures.has(value)) return;
+      disposedTextures.add(value);
+      value.dispose();
+    });
+    material.dispose();
+  });
 }

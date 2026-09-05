@@ -7,9 +7,9 @@ import { createHeroScene } from "./hero-scene";
 type ViewerStatus = "loading" | "ready" | "fallback";
 
 /**
- * Poster-first hero stage: the render shows immediately, the WebGL scene replaces it once
- * three.js and the .glb have loaded, and any failure (no WebGL, missing model, lost
- * context) falls back to the poster instead of an empty box.
+ * Show the loading indicator until the WebGL scene is ready. The static poster has
+ * a different pose, so reserve it for failures (no WebGL, missing model, lost context)
+ * instead of flashing it while the model loads.
  */
 export default function HeroModelViewer({ hero, slug, portrait }: { hero: string; slug: string; portrait?: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ export default function HeroModelViewer({ hero, slug, portrait }: { hero: string
   return (
     <div className={`hero-viewer ${status}`} aria-label={`Интерактивная 3D-модель героя ${hero}`}>
       <div ref={hostRef} className="hero-viewer-stage" />
-      {status !== "ready" && (
+      {status === "fallback" && (
         <Image className="hero-model hero-model-poster" src={poster} alt={hero} width={1080} height={1080} priority unoptimized onError={() => { if (portrait && poster !== portrait) setPoster(portrait); }} />
       )}
       {status === "loading" && <span className="hero-model-loading" role="status">Загружаем 3D-модель…</span>}
