@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-/** Поле пароля с переключателем видимости — как «глаз» в макете. */
 export function PasswordField({
   id,
   label,

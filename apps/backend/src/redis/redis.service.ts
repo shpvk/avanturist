@@ -2,10 +2,6 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import IORedis, { Redis } from 'ioredis';
 
-/**
- * Единственное подключение к Redis на всё приложение.
- * Здесь живут refresh-токены: сессии, маркеры использованных токенов и индексы семей.
- */
 @Injectable()
 export class RedisService implements OnModuleDestroy {
     public readonly client: Redis;

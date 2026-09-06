@@ -10,10 +10,6 @@ import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 import {IS_DEV_ENV} from "./libs/common/utils/is-dev.utils";
 import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
 
-/**
- * Значение для express `trust proxy`: число — столько хопов доверяем,
- * `true`/`false` — доверять всем или никому, всё остальное — список адресов.
- */
 function trustProxyValue(raw: string): boolean | number | string {
   if (/^\d+$/.test(raw)) {
     return Number(raw);
@@ -27,7 +23,6 @@ function trustProxyValue(raw: string): boolean | number | string {
 }
 
 async function bootstrap(): Promise<void> {
-
   loadRootEnv();
   assertRequiredEnv();
 
@@ -35,18 +30,14 @@ async function bootstrap(): Promise<void> {
 
   const config = app.get(ConfigService);
 
-  // Заголовок выдаёт стек приложения и ничего не даёт клиенту.
   app.disable('x-powered-by');
 
-  // За реверс-прокси req.ip без этого равен адресу прокси: throttler считает
-  // всех клиентов одним ведром, а Turnstile получает чужой remoteip.
   const trustProxy = config.get<string>('TRUST_PROXY')?.trim();
 
   if (trustProxy) {
     app.set('trust proxy', trustProxyValue(trustProxy));
   }
 
-  // Swagger — карта всего API: в прод его отдавать не надо.
   const swaggerEnabled = parseBoolean(
       config.get<string>('SWAGGER_ENABLED') ?? String(IS_DEV_ENV),
   );
@@ -54,7 +45,6 @@ async function bootstrap(): Promise<void> {
   app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
-    // В ответах API нет ссылок наружу, а в query бывают одноразовые коды.
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
 
@@ -65,7 +55,6 @@ async function bootstrap(): Promise<void> {
       );
     }
 
-    // JSON-ответам не нужен ни один источник; страницу Swagger это сломало бы.
     if (!swaggerEnabled || !req.path.startsWith('/api')) {
       res.setHeader(
           'Content-Security-Policy',

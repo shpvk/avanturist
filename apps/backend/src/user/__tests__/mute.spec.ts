@@ -8,7 +8,6 @@ type UserRow = {
     muteReason: string | null;
 };
 
-/** Ровно те две операции над пользователем, которые нужны муту. */
 function serviceWith(stored: UserRow) {
     const update = jest.fn(async ({ data }: { data: Partial<UserRow> }) => {
         Object.assign(stored, data);

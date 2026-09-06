@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ITEMS, type Item } from './items.data';
 
+const byId = new Map(ITEMS.map(item => [item.id, item]));
+
 @Injectable()
 export class ItemsService {
     findAll(): Item[] {
@@ -8,7 +10,7 @@ export class ItemsService {
     }
 
     findOne(id: string): Item {
-        const item = ITEMS.find((candidate) => candidate.id === id);
+        const item = byId.get(id);
 
         if (!item) {
             throw new NotFoundException(`Item "${id}" not found`);
@@ -18,6 +20,6 @@ export class ItemsService {
     }
 
     exists(id: string): boolean {
-        return ITEMS.some((candidate) => candidate.id === id);
+        return byId.has(id);
     }
 }

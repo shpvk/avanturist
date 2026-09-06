@@ -4,16 +4,11 @@ import { AuthMethod } from '../generated/prisma/enums';
 import { User } from '../generated/prisma/client';
 import { hash } from 'argon2';
 
-/**
- * Активный мут пользователя. `until: null` — бессрочный: в базе такой мут
- * отличается от снятого тем, что заполнен `mutedAt`.
- */
 export interface ActiveMute {
     until: Date | null;
     reason: string | null;
 }
 
-/** Данные для создания пользователя: у OAuth-аккаунтов пароля нет. */
 export interface CreateUserInput {
     email: string;
     password: string | null;
@@ -40,7 +35,6 @@ export class UserService {
         return user;
     }
 
-    /** Возвращает `null`, если пользователя нет: используется в проверках логина. */
     public async findByIdOrNull(id: string): Promise<User | null> {
         return this.prismaService.user.findUnique({ where: { id } });
     }
@@ -66,7 +60,6 @@ export class UserService {
         });
     }
 
-    /** Ищет пользователя по связанному аккаунту провайдера. */
     public async findByProviderAccount(
         provider: string,
         providerAccountId: string,
@@ -81,13 +74,6 @@ export class UserService {
         return account?.user ?? null;
     }
 
-    /**
-     * Привязывает внешний аккаунт к существующему пользователю.
-     *
-     * Токены провайдера сознательно не храним: приложение к его API больше не
-     * ходит, а в базе они были бы лишним трофеем при утечке. Колонки остаются
-     * пустыми, пока для них не появится настоящий потребитель.
-     */
     public async linkAccount(input: {
         userId: string;
         provider: string;
@@ -131,10 +117,6 @@ export class UserService {
         });
     }
 
-    /**
-     * Действующий мут или `null`. Истёкший мут заодно снимается: иначе метка
-     * жила бы в базе вечно и попадала бы в ответы модерации как активная.
-     */
     public async activeMute(
         userId: string,
         now: Date = new Date(),
@@ -157,7 +139,6 @@ export class UserService {
         return { until: user.mutedUntil, reason: user.muteReason };
     }
 
-    /** Закрывает пользователю комментарии. `until: null` — бессрочно. */
     public async mute(input: {
         userId: string;
         until: Date | null;

@@ -2,7 +2,6 @@
 
 import { googleSignInUrl } from "../_lib/auth-api";
 
-/** Уводит на согласие Google; назад пользователь вернётся на /auth/callback. */
 export function GoogleButton({ label = "Continue with Google" }: { label?: string }) {
   return (
     <a className="auth-provider-button" href={googleSignInUrl()}>

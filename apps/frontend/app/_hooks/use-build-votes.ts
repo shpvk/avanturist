@@ -8,9 +8,7 @@ import { getVoterKey } from "../_lib/voter";
 import type { Build, HeroOption, Vote } from "../_lib/types";
 
 export type BuildVotes = {
-  /** Keyed by build id, so a verdict survives shuffling and view switches. */
   votes: Record<string, Vote>;
-  /** A vote still in flight is added to the bar locally; the API's tally replaces it. */
   pendingVotes: Record<string, Vote>;
   castVote: (build: Build, verdict: Vote) => void;
 };
@@ -38,7 +36,6 @@ export function useBuildVotes(
         });
       })
       .catch(() => {
-        // The API is unreachable: keep the local tally so the demo still answers.
       });
   }, [heroes, replaceBuild]);
 

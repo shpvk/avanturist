@@ -1,0 +1,94 @@
+{
+  "source": {
+    "channel": "witchblvde_agents",
+    "title": "Хайповые Сборки",
+    "extractedAt": "2026-09-06"
+  },
+  "profile": {
+    "displayName": "Хайповые сборки",
+    "email": "hype-builds@buildverdict.local"
+  },
+  "builds": [
+    {
+      "postId": 1059,
+      "title": "Кундалини",
+      "heroId": "antimage",
+      "items": ["ethereal_blade", "arcane_blink", "radiance", "dagon", "octarine_core", "hydras_breath"],
+      "credit": "@uglymindset",
+      "sourceUrl": "https://t.me/witchblvde_agents/1059"
+    },
+    {
+      "postId": 1058,
+      "title": "Нахаркал",
+      "heroId": "viper",
+      "items": ["moon_shard", "basher", "dust", "meteor_hammer", "aether_lens", "tranquil_boots"],
+      "credit": "@d5nko",
+      "sourceUrl": "https://t.me/witchblvde_agents/1058"
+    },
+    {
+      "postId": 1057,
+      "title": "скитер укусил",
+      "heroId": "tinker",
+      "items": ["heart", "wind_lace", "invis_sword", "ward_dispenser", "power_treads", "null_talisman"],
+      "credit": "@dontpickio",
+      "sourceUrl": "https://t.me/witchblvde_agents/1057"
+    },
+    {
+      "postId": 1056,
+      "title": "наркоман",
+      "heroId": "broodmother",
+      "items": ["bloodthorn", "harpoon", "skadi", "wind_lace", "vladmir", "tranquil_boots"],
+      "credit": "@tokyoneversleep",
+      "sourceUrl": "https://t.me/witchblvde_agents/1056"
+    },
+    {
+      "postId": 1053,
+      "title": "собиратель кабанчиков",
+      "heroId": "beastmaster",
+      "items": ["helm_of_the_dominator", "helm_of_the_dominator", "helm_of_the_dominator", "helm_of_the_dominator", "helm_of_the_dominator", "helm_of_the_dominator"],
+      "credit": "@yee2121",
+      "sourceUrl": "https://t.me/witchblvde_agents/1053"
+    },
+    {
+      "postId": 1052,
+      "title": "вор по жизни",
+      "heroId": "bounty_hunter",
+      "items": ["bloodthorn", "satanic", "swift_blink", "skadi", "butterfly", "black_king_bar"],
+      "credit": "@d5nko",
+      "sourceUrl": "https://t.me/witchblvde_agents/1052"
+    },
+    {
+      "postId": 1051,
+      "title": "Тарантул",
+      "heroId": "broodmother",
+      "items": ["witch_blade", "ancient_janggo", "bloodstone", "mage_slayer", "manta", "hurricane_pike"],
+      "credit": "@Griffith511488",
+      "sourceUrl": "https://t.me/witchblvde_agents/1051"
+    },
+    {
+      "postId": 1050,
+      "title": "Шмотки по красоте",
+      "heroId": "ogre_magi",
+      "items": ["dagon", "cyclone", "revenants_brooch", "maelstrom", "manta", "sange_and_yasha"],
+      "credit": "@CalabashEater",
+      "sourceUrl": "https://t.me/witchblvde_agents/1050"
+    },
+    {
+      "postId": 1049,
+      "title": "Некроз мозга",
+      "heroId": "necrolyte",
+      "items": ["lesser_crit", "hurricane_pike", "mjollnir", "desolator", "witch_blade", "boots"],
+      "credit": "@zloi223",
+      "sourceUrl": "https://t.me/witchblvde_agents/1049"
+    }
+  ],
+  "skipped": [
+    {
+      "postId": 1048,
+      "title": "мать твою...",
+      "heroId": "keeper_of_the_light",
+      "reason": "Один из шести слотов не читается: иконка размыта, лучшие кандидаты идут вплотную (radiance 0.73 / overwhelming_blink 0.72 / hand_of_midas 0.71). Остальные пять — harpoon, blade_mail, arcane_boots, radiance, blink.",
+      "sourceUrl": "https://t.me/witchblvde_agents/1048"
+    }
+  ]
+}

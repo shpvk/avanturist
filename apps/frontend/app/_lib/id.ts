@@ -1,4 +1,3 @@
-/** Collision-free id for client-authored builds and comments. */
 export function createId(prefix: string): string {
   const suffix = typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID().slice(0, 8)

@@ -32,9 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  // Сессия живёт в браузере (access в памяти, refresh в localStorage),
-  // поэтому пользователя знает только клиент — сервер отдаёт лишь ленту.
   const feed = await loadFeed();
 
-  return <BuildVerdictClient initialBuilds={feed.builds} heroes={feed.heroes} />;
+  return <BuildVerdictClient initialBuilds={feed.builds} initialTotal={feed.total} heroes={feed.heroes} />;
 }

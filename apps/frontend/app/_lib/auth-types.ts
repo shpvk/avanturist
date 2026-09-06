@@ -1,4 +1,3 @@
-/** Профиль, который отдаёт `/auth/me` и все ответы авторизации. */
 export type AuthProfile = {
   id: string;
   email: string;
@@ -6,11 +5,10 @@ export type AuthProfile = {
   picture: string | null;
   role: "REGULAR" | "ADMIN";
   isVerified: boolean;
-  /** Мут закрывает только комментарии; форма знает об этом до отправки. */
   muted: boolean;
-  /** `null` — мут бессрочный. */
   mutedUntil: string | null;
   muteReason: string | null;
+  createdAt: string;
 };
 
 export type AuthTokens = {

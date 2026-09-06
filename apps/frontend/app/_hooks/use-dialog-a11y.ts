@@ -5,16 +5,10 @@ import { useEffect, useRef } from "react";
 const focusableSelector =
   'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/**
- * Modal plumbing for a dialog element: locks page scroll, traps Tab inside, closes on
- * Escape and restores focus on unmount. The effect runs exactly once per dialog, so a
- * re-render of the page behind it can no longer yank focus back to the first control.
- */
 export function useDialogA11y<T extends HTMLElement>(onClose: () => void) {
   const dialogRef = useRef<T>(null);
   const onCloseRef = useRef(onClose);
 
-  // Kept in a ref so a fresh inline callback from the parent cannot restart the effect.
   useEffect(() => {
     onCloseRef.current = onClose;
   });

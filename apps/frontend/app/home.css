@@ -1,0 +1,179 @@
+body, html[data-theme="light"] body { background-image: none; }
+.topbar { height: 80px; background: var(--page); backdrop-filter: none; }
+.topbar-inner { width: min(calc(100% - 64px), 1472px); gap: 28px; }
+.wordmark { display: flex; align-items: baseline; padding: 0; border: 0; background: none; font-size: 36px; font-weight: 700; letter-spacing: -1.6px; }
+.wordmark span { color: var(--accent); }
+.header-nav { height: 100%; margin-left: 52px; padding: 0; gap: 44px; border: 0; border-radius: 0; background: none; }
+.header-nav button { position: relative; padding: 0; border-radius: 0; color: var(--text-soft); font-size: 18px; font-weight: 400; }
+.header-nav button.active { background: none; color: var(--text); }
+.header-nav button.active::after { content: ""; position: absolute; right: 0; left: 0; top: calc(50% + 15px); height: 2px; background: var(--accent); }
+.theme-toggle { margin-left: auto; border: 0; border-radius: 4px; background: none; color: var(--text-dim); }
+.header-actions { gap: 14px; }
+.profile-button { border-radius: 4px; }
+.random-main { width: min(calc(100% - 112px), 1408px); padding: 0 0 48px; }
+.all-builds-main { width: min(calc(100% - 64px), 1472px); }
+
+.dota-stage {
+  --sheet-text: #ffffff;
+  --sheet-soft: #ccd4dd;
+  --sheet-dim: #828d9a;
+  --sheet-line: rgba(255, 255, 255, 0.08);
+  --slot: 92px;
+  --slot-gap: 3px;
+  --backpack-h: calc(var(--slot) * 7 / 15);
+}
+.random-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.06fr) minmax(300px, 0.94fr);
+  grid-template-rows: 1fr auto;
+  column-gap: 24px;
+  height: auto;
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid var(--sheet-line);
+  border-radius: 5px;
+  background:
+    radial-gradient(46% 54% at 76% 46%, rgba(60, 116, 200, 0.16), transparent 70%),
+    linear-gradient(172deg, #0a0c10 0%, #060709 58%, #030405 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 26px 64px rgba(0, 0, 0, 0.5);
+  color: var(--sheet-text);
+}
+html[data-theme="light"] .random-card { box-shadow: 0 20px 52px rgba(23, 37, 66, 0.22); }
+
+.dota-build-panel { grid-column: 1; grid-row: 1; display: block; min-width: 0; min-height: 0; padding: 40px 0 20px 44px; overflow: visible; border: 0; background: none; }
+.dota-panel-header { display: flex; flex-wrap: nowrap; align-items: flex-start; justify-content: flex-start; gap: calc(var(--slot) * 0.17); }
+.dota-player-avatar { width: calc(var(--slot) * 0.89); height: calc(var(--slot) * 0.89); flex: 0 0 calc(var(--slot) * 0.89); display: block; border-radius: 0; object-fit: cover; background: #0c1117; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55); }
+.dota-panel-meta { min-width: 0; margin: 0; display: block; }
+.dota-player-name { margin: -6px 0 0; display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.dota-player-name strong { overflow: hidden; color: var(--sheet-text); font-size: calc(var(--slot) * 0.48); font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; text-overflow: ellipsis; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85); }
+.dota-player-name i { flex: 0 0 auto; align-self: flex-end; padding-bottom: calc(var(--slot) * 0.05); color: var(--sheet-dim); font-size: calc(var(--slot) * 0.14); font-style: normal; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+.dota-hero-identity { display: block; margin-top: calc(var(--slot) * 0.1); }
+.dota-hero-identity h2 { margin: 0; color: var(--sheet-soft); font-size: calc(var(--slot) * 0.2); line-height: 1.2; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
+.dota-build-title { margin: calc(var(--slot) * 0.26) 0 0; padding: 0; border: 0; color: var(--sheet-soft); font-size: calc(var(--slot) * 0.25); font-weight: 500; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; text-wrap: balance; }
+.dota-inventory { margin-top: calc(var(--slot) * 0.3); }
+
+.dota-inventory-grid { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; align-items: center; gap: calc(var(--slot) * 0.17); }
+.inventory-main { display: grid; grid-template-columns: repeat(3, var(--slot)); gap: var(--slot-gap); }
+.inventory-column { display: grid; gap: var(--slot-gap); margin-bottom: calc(var(--backpack-h) + var(--slot-gap)); }
+.inventory-slot { position: relative; width: var(--slot); aspect-ratio: 11 / 8; overflow: hidden; border: 0; border-radius: 2px; background: #0b0e12; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 1px 3px rgba(0, 0, 0, 0.6); }
+.inventory-slot img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.inventory-slot.empty { background: rgba(9, 11, 15, 0.9); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045); }
+.inventory-slot.backpack { aspect-ratio: auto; height: var(--backpack-h); }
+.inventory-slot.backpack.empty { background: rgba(6, 8, 11, 0.92); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03); }
+.inventory-slot.scepter, .inventory-slot.shard { width: calc(var(--slot) * 0.62); }
+.inventory-slot.neutral { width: calc(var(--slot) * 0.84); }
+.inventory-slot .slot-placeholder { opacity: 0.16; filter: grayscale(1); }
+
+.hero-showcase { position: relative; grid-column: 2; grid-row: 1 / 3; min-height: 620px; border: 0; background: radial-gradient(46% 40% at 51% 50%, rgba(64, 128, 232, 0.3), rgba(52, 104, 196, 0.1) 55%, transparent 76%); }
+.hero-showcase::after { content: ""; position: absolute; z-index: 0; right: 22%; bottom: 7%; left: 22%; height: 9%; border-radius: 50%; background: radial-gradient(ellipse, rgba(96, 158, 250, 0.32), transparent 72%); filter: blur(16px); pointer-events: none; }
+.hero-viewer { inset: 0; }
+.hero-model { filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.7)); transform: none; }
+html[data-theme="light"] .hero-model { filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.7)); }
+.hero-model-loading { border: 0; border-radius: 3px; background: rgba(10, 14, 19, 0.82); color: var(--sheet-soft); }
+
+.rating-panel { grid-column: 1; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0 34px 44px; border: 0; background: none; }
+.rating-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rating-button { min-height: 40px; padding: 8px 12px; gap: 8px; border: 1px solid var(--sheet-line); border-radius: 3px; background: rgba(255, 255, 255, 0.03); color: var(--sheet-soft); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.rating-button:hover { transform: none; border-color: rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.08); color: var(--sheet-text); }
+.rating-button.selected { border-color: rgba(255, 255, 255, 0.3); box-shadow: none; background: rgba(255, 255, 255, 0.11); color: var(--sheet-text); }
+.rating-button.selected.positive, .rating-button.selected.situational, .rating-button.selected.negative { border-color: rgba(255, 255, 255, 0.3); box-shadow: none; }
+.verdict-dot { width: 5px; height: 5px; flex: 0 0 5px; border-radius: 50%; background: var(--sheet-dim); }
+.positive .verdict-dot { background: #7ec46b; }
+.situational .verdict-dot { background: #e2b23c; }
+.negative .verdict-dot { background: #d9584f; }
+.verdict-percentage { color: var(--sheet-dim); font-variant-numeric: tabular-nums; }
+.prev-build-button, .next-build-button { min-height: 40px; padding: 0 4px; border: 0; border-radius: 0; background: none; color: #8fb4f2; font-size: 15px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.prev-build-button { margin-left: auto; color: var(--sheet-dim); }
+.prev-build-button span { display: inline-block; margin-right: 8px; font-size: 19px; }
+.prev-build-button:not(:disabled):hover { background: none; color: var(--sheet-text); }
+.prev-build-button + .next-build-button { margin-left: 22px; }
+.next-build-button { margin-left: auto; }
+.next-build-button span { display: inline-block; margin-left: 8px; font-size: 19px; }
+.next-build-button:hover { background: none; color: var(--sheet-text); }
+.rating-panel .delete-build, .rating-panel .delete-build-confirm { margin-left: 22px; }
+.rating-panel .delete-build, .rating-panel .delete-build-confirm button { min-height: 40px; border-radius: 3px; color: var(--sheet-dim); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+.rating-panel .delete-build-confirm { color: var(--sheet-dim); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+.rating-panel .delete-build:hover, .rating-panel .delete-build-confirm button:hover:not(:disabled) { border-color: rgba(217, 88, 79, 0.55); background: rgba(217, 88, 79, 0.14); color: #ef8079; }
+.rating-panel .delete-build-confirm button.destructive { border-color: rgba(217, 88, 79, 0.55); color: #ef8079; }
+
+.discussion-section { width: 100%; padding-top: 12px; }
+.discussion-section .build-comments { margin: 0; padding: 0; border: 0; }
+.discussion-section .build-comments-head { margin: 0; min-height: 28px; justify-content: flex-end; }
+.discussion-section .build-comments-head > .section-label { display: none; }
+.discussion-section .random-comment-count { font-size: 12px; }
+.discussion-section .random-comment-count i { display: none; }
+.discussion-section .comment-list { gap: 0; }
+.discussion-section .comment-item { padding: 20px 0; border: 0; border-bottom: 1px solid var(--stroke); border-radius: 0; background: none; gap: 24px; }
+.discussion-section .comment-item:last-child { border-bottom: 0; }
+.discussion-section .comment-item > img { width: 64px; height: 64px; flex-basis: 64px; border: 1px solid var(--stroke-strong); border-radius: 0; object-fit: cover; }
+.discussion-section .comment-item-head { justify-content: flex-start; gap: 30px; }
+.discussion-section .comment-item-head strong { font-size: 17px; font-weight: 500; }
+.discussion-section .comment-item-head span { font-size: 14px; }
+.discussion-section .comment-item p { max-width: 1000px; margin-top: 8px; font-size: 17px; line-height: 1.55; }
+.discussion-section .comment-composer { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; align-items: start; gap: 24px; margin-bottom: 28px; padding: 0; border: 0; border-radius: 0; background: none; }
+.discussion-section .comment-composer::before { content: "?"; display: grid; place-items: center; height: 64px; border: 1px solid var(--stroke-strong); border-radius: 2px; color: var(--text-dim); font-size: 30px; }
+.discussion-section .comment-composer textarea { grid-column: 2; min-height: 64px; padding: 18px; border: 1px solid var(--stroke-strong); border-radius: 3px; background: none; font-size: 16px; }
+.discussion-section .comment-composer textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.discussion-section .comment-composer-footer { grid-column: 3; position: relative; margin: 0; min-height: 64px; }
+.discussion-section .comment-composer-footer > span { position: absolute; top: 100%; right: 10px; font-size: 12px; }
+.discussion-section .comment-composer-footer button { padding: 0 12px; min-height: 44px; border-radius: 3px; background: none; color: var(--accent); font-size: 16px; font-weight: 400; }
+.discussion-section .comment-composer-footer button:not(:disabled):hover { background: var(--surface-2); }
+@media (max-width: 1180px) {
+  .topbar-inner, .all-builds-main { width: calc(100% - 48px); }
+  .random-main { width: calc(100% - 64px); }
+  .header-nav { margin-left: 24px; gap: 28px; }
+  .dota-stage { --slot: 76px; }
+  .random-card { grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr); column-gap: 16px; min-height: 540px; }
+  .dota-build-panel { padding: 32px 0 16px 30px; }
+  .dota-player-avatar { width: 60px; height: 60px; flex-basis: 60px; }
+  .hero-showcase { min-height: 540px; }
+  .rating-panel { padding: 12px 0 26px 30px; gap: 8px; }
+}
+@media (max-width: 800px) {
+  .topbar { height: auto; position: relative; }
+  .topbar-inner { display: grid; grid-template-columns: 1fr 40px auto; padding: 16px 0 0; gap: 12px; }
+  .wordmark { grid-column: 1; grid-row: 1; width: fit-content; font-size: 28px; }
+  .theme-toggle { grid-column: 2; grid-row: 1; display: grid; width: 40px; height: 40px; margin: 0; }
+  .header-actions { grid-column: 3; grid-row: 1; }
+  .header-nav { grid-column: 1 / -1; grid-row: 2; width: auto; height: 46px; margin: 0; gap: 28px; }
+  .header-nav button { flex: none; padding: 0; font-size: 16px; }
+  .random-main { width: calc(100% - 48px); }
+  .dota-stage { --slot: 68px; }
+  .random-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; column-gap: 0; min-height: 0; }
+  .dota-build-panel { grid-column: 1; grid-row: 1; padding: 26px 22px 0; }
+  .dota-panel-header { gap: 14px; }
+  .dota-player-avatar { width: 52px; height: 52px; flex-basis: 52px; }
+  .dota-player-name { margin-top: -3px; }
+  .dota-player-name strong { font-size: clamp(28px, 6.4vw, 42px); }
+  .dota-hero-identity h2 { font-size: 13px; letter-spacing: 0.15em; }
+  .dota-build-title { margin-top: 20px; font-size: clamp(18px, 3.6vw, 22px); }
+  .dota-inventory { margin-top: 22px; }
+  .hero-showcase { grid-column: 1; grid-row: 3; min-height: 360px; height: clamp(360px, 68vw, 470px); }
+  .rating-panel { grid-column: 1; grid-row: 2; padding: 18px 22px 20px; gap: 12px; }
+  .rating-actions { justify-content: space-between; width: 100%; gap: 0; }
+  .rating-button { min-height: 40px; flex-direction: row; padding: 8px 6px; gap: 6px; font-size: 12px; }
+  .prev-build-button, .next-build-button { font-size: 13px; }
+  .prev-build-button + .next-build-button { margin-left: auto; }
+  .discussion-section .comment-item { gap: 14px; padding: 18px 0; }
+  .discussion-section .comment-item > img { width: 42px; height: 42px; flex-basis: 42px; }
+  .discussion-section .comment-item-head { flex-wrap: wrap; gap: 4px 16px; }
+  .discussion-section .comment-item-head strong, .discussion-section .comment-item p { font-size: 16px; }
+  .discussion-section .comment-item-head span { font-size: 12px; }
+  .discussion-section .comment-composer { grid-template-columns: 42px minmax(0, 1fr); gap: 12px 14px; }
+  .discussion-section .comment-composer::before { height: 48px; font-size: 24px; }
+  .discussion-section .comment-composer textarea { min-height: 80px; padding: 12px; }
+  .discussion-section .comment-composer-footer { grid-column: 2; min-height: 44px; }
+  .discussion-section .comment-composer-footer > span { position: static; }
+}
+@media (max-width: 520px) {
+  .dota-stage { --slot: 58px; }
+}
+@media (max-width: 380px) {
+  .topbar-inner, .random-main, .all-builds-main { width: calc(100% - 32px); }
+  .wordmark { font-size: 25px; }
+  .dota-stage { --slot: 52px; }
+  .dota-build-panel { padding-inline: 16px; }
+  .rating-panel { padding-inline: 16px; }
+  .rating-button { padding-inline: 3px; gap: 5px; font-size: 11px; }
+}

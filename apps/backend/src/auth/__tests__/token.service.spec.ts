@@ -2,10 +2,6 @@ import { UnauthorizedException } from '@nestjs/common';
 import { TokenService } from '../token.service';
 import { User } from '../../generated/prisma/client';
 
-/**
- * Минимальный in-memory Redis: строки, множества и TTL нам не важны,
- * важна логика ротации и отзыва семьи токенов.
- */
 class FakeRedis {
     private strings = new Map<string, string>();
     private sets = new Map<string, Set<string>>();
@@ -142,12 +138,10 @@ describe('TokenService', () => {
         const first = await service.issuePair(user, {});
         const second = await service.rotate(first.refreshToken, loadUser, {});
 
-        // Атакующий предъявляет украденный старый токен.
         await expect(
             service.rotate(first.refreshToken, loadUser, {}),
         ).rejects.toBeInstanceOf(UnauthorizedException);
 
-        // Живой токен законного владельца тоже больше не действует.
         await expect(
             service.rotate(second.tokens.refreshToken, loadUser, {}),
         ).rejects.toBeInstanceOf(UnauthorizedException);
@@ -231,7 +225,6 @@ describe('TokenService', () => {
         await service.revokeAllForUser(user.id);
 
         expect(await service.isAccessRevoked(user.id, issuedAt)).toBe(true);
-        // Токен, выпущенный после отзыва, снова действителен.
         expect(
             await service.isAccessRevoked(
                 user.id,

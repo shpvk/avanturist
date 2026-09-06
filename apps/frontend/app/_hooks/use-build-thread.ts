@@ -17,7 +17,6 @@ import { createId } from "../_lib/id";
 import type { ApiComment, ApiMute, MutePayload } from "../_lib/api-types";
 import type { Build, BuildComment } from "../_lib/types";
 
-/** Почему композер закрыт — и закрыт ли вообще. */
 export type ComposerState =
   | { kind: "loading" }
   | { kind: "ready" }
@@ -25,26 +24,21 @@ export type ComposerState =
   | { kind: "unverified" }
   | { kind: "muted"; until: string | null; reason: string | null };
 
-/** Действия модератора. Обычному пользователю сюда приходит `null`. */
 export type ThreadModeration = {
   onHide: (commentId: string) => void;
   onRestore: (commentId: string) => void;
   onMute: (comment: BuildComment) => void;
   onUnmute: (authorId: string) => void;
-  /** Комментарий, по которому сейчас идёт запрос: его кнопки заблокированы. */
   pendingId: string | null;
 };
 
 export type BuildThread = {
   draft: string;
-  expanded: boolean;
   composer: ComposerState;
   error: string | null;
   moderation: ThreadModeration | null;
-  /** Автор, для которого открыт диалог мута. */
   muteTarget: BuildComment | null;
   setDraft: (value: string) => void;
-  setExpanded: (expanded: boolean) => void;
   addComment: (text: string) => void;
   closeMuteDialog: () => void;
   submitMute: (payload: MutePayload) => Promise<void>;
@@ -66,34 +60,20 @@ type BuildThreadInput = {
   updateComments: (update: (build: Build) => Build) => void;
 };
 
-/**
- * Обсуждение под билдом: черновик, отправка и — для админа — модерация ветки.
- * Комментарии живут внутри билда, поэтому все записи идут через `replaceBuild`.
- */
 export function useBuildThread({ currentBuild, replaceBuild, updateComments }: BuildThreadInput): BuildThread {
   const { user, isLoading } = useAuth();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [muteTarget, setMuteTarget] = useState<BuildComment | null>(null);
-  /**
-   * Мут, о котором сказал отказ сервера: профиль в памяти о нём ещё не знает.
-   * Хранится вместе с владельцем, поэтому после смены аккаунта отпадает сам.
-   */
   const [rejectedMute, setRejectedMute] = useState<{ userId: string; mute: Mute } | null>(null);
-  /** Тикает один раз — в момент, когда истекает собственный мут. */
   const [now, setNow] = useState(() => Date.now());
 
   const buildId = currentBuild?.id;
   const isModerator = user?.role === "ADMIN";
 
-  /**
-   * Лента отдаёт только живые комментарии. Админу ветка нужна целиком, вместе
-   * со скрытыми, поэтому для него она перечитывается отдельным запросом.
-   */
   useEffect(() => {
-    if (!isModerator || !buildId) return;
+    if (!buildId) return;
 
     let cancelled = false;
 
@@ -101,10 +81,9 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
       .then((comments: ApiComment[]) => {
         if (cancelled) return;
         const mapped = comments.map((comment) => mapComment(comment));
-        replaceBuild(buildId, (previous) => ({ ...previous, comments: mapped }));
+        replaceBuild(buildId, (previous) => ({ ...previous, comments: mapped, commentCount: mapped.length }));
       })
       .catch(() => {
-        // API недоступен: в ветке остаётся то, что уже пришло с лентой.
       });
 
     return () => {
@@ -116,7 +95,6 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
     const fromServer = rejectedMute && rejectedMute.userId === user?.id ? rejectedMute.mute : null;
     const mute = user?.muted ? { until: user.mutedUntil, reason: user.muteReason } : fromServer;
     if (!mute) return null;
-    // Срок мог истечь прямо в открытой вкладке: тогда комментарии снова открыты.
     if (mute.until && new Date(mute.until).getTime() <= now) return null;
     return mute;
   }, [user, rejectedMute, now]);
@@ -155,7 +133,11 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
       text,
     };
 
-    replaceBuild(buildId, (previous) => ({ ...previous, comments: [...previous.comments, optimistic] }));
+    replaceBuild(buildId, (previous) => ({
+      ...previous,
+      comments: [...previous.comments, optimistic],
+      commentCount: previous.commentCount + 1,
+    }));
     setDrafts((current) => ({ ...current, [buildId]: "" }));
     setError(null);
 
@@ -167,13 +149,12 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
         }));
       })
       .catch((cause: unknown) => {
-        // Недоступный API комментарий не отменяет: демо-режим продолжает работать.
         if (!(cause instanceof ApiError)) return;
 
-        // Отказ сервера — другое дело: снимаем комментарий и возвращаем текст в поле.
         replaceBuild(buildId, (previous) => ({
           ...previous,
           comments: previous.comments.filter((comment) => comment.id !== optimistic.id),
+          commentCount: Math.max(previous.commentCount - 1, 0),
         }));
         setDrafts((current) => ({ ...current, [buildId]: text }));
 
@@ -209,7 +190,6 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
     }
   }, [applyComment]);
 
-  /** Мут глобальный, поэтому метка обновляется у всех комментариев автора. */
   const applyMute = useCallback((authorId: string, mute: ApiMute) => {
     updateComments((build) => ({
       ...build,
@@ -250,13 +230,11 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
 
   return {
     draft: buildId ? (drafts[buildId] ?? "") : "",
-    expanded: expandedId !== null && expandedId === buildId,
     composer,
     error,
     moderation,
     muteTarget,
     setDraft,
-    setExpanded: (expanded: boolean) => setExpandedId(expanded && buildId ? buildId : null),
     addComment,
     closeMuteDialog: () => setMuteTarget(null),
     submitMute,

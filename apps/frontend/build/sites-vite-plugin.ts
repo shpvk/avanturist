@@ -33,7 +33,6 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-// Packages Sites metadata and migrations after Vite finishes compiling.
 export function sites(): Plugin {
   let root = process.cwd();
 
@@ -61,9 +60,6 @@ export function sites(): Plugin {
         });
       }
 
-      // Vite copies public/ wholesale. Keep source originals available for
-      // future design work without shipping files that the application never
-      // requests in production.
       await Promise.all(
         DEPLOY_EXCLUDED_PUBLIC_ASSETS.map((asset) =>
           rm(resolve(publicOutputDirectory, asset), { force: true }),

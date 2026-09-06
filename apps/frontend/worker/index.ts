@@ -1,4 +1,3 @@
-/** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 
@@ -22,7 +21,8 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
-/** Куда странице разрешено ходить за данными: тот же origin плюс Nest API. */
+const dotaCdnOrigin = "https://cdn.cloudflare.steamstatic.com";
+
 const apiOrigin = (() => {
   const configured = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_URL;
   try {
@@ -32,12 +32,6 @@ const apiOrigin = (() => {
   }
 })();
 
-/**
- * Refresh-токен лежит в localStorage, поэтому XSS здесь стоит дороже, чем при
- * HttpOnly-cookie. Скрипты RSC инлайновые, от 'unsafe-inline' в script-src
- * никуда не деться, зато connect-src, img-src и form-action закрывают каналы,
- * по которым украденный токен уходил бы наружу.
- */
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -46,21 +40,11 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src 'self' data: blob: ${dotaCdnOrigin}`,
   "font-src 'self' data:",
   "worker-src 'self' blob:",
-  // blob: и data: тут обязательны, а не для галочки: текстуры внутри .glb
-  // GLTFLoader достаёт из bufferView, заворачивает в blob и грузит через
-  // ImageBitmapLoader, а тот внутри делает fetch() — без blob: в connect-src
-  // текстуры молча не догружаются и модель героя становится белой.
   `connect-src 'self' blob: data: ${apiOrigin}`,
 ].join("; ");
-
-// Image security config. SVG sources with .svg extension auto-skip the
-// optimization endpoint on the client side (served directly, no proxy).
-// To route SVGs through the optimizer (with security headers), set
-// dangerouslyAllowSVG: true in next.config.js and uncomment below:
-// const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -83,7 +67,6 @@ const worker = {
     responseHeaders.set("X-Content-Type-Options", "nosniff");
     responseHeaders.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     responseHeaders.set("Content-Security-Policy", contentSecurityPolicy);
-    // frame-ancestors хватает современным браузерам, X-Frame-Options — остальным.
     responseHeaders.set("X-Frame-Options", "DENY");
     responseHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
     if (url.protocol === "https:") {

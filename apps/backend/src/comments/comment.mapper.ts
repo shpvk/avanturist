@@ -1,10 +1,5 @@
 import { isMuted } from '../user/mute.util';
 
-/**
- * Комментарий в том виде, в каком его отдаёт API. Поля модерации приходят
- * только администратору: срок мута и факт скрытия — служебная информация,
- * читателям ветки её знать незачем.
- */
 export interface PublicComment {
     id: string;
     buildId: string;
@@ -15,11 +10,9 @@ export interface PublicComment {
     isDeleted?: boolean;
     deletedAt?: string | null;
     authorMuted?: boolean;
-    /** `null` при бессрочном муте — вместе с `authorMuted: true`. */
     authorMutedUntil?: string | null;
 }
 
-/** Строка комментария с автором: ровно то, что выбирает `commentSelect`. */
 export interface CommentRow {
     id: string;
     buildId: string;

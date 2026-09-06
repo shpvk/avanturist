@@ -20,7 +20,6 @@ export type UseAuthResult = AuthState & {
   setUser: typeof setAuthUser;
 };
 
-/** Текущая сессия. Провайдер не нужен: состояние лежит во внешнем сторе. */
 export function useAuth(): UseAuthResult {
   const state = useSyncExternalStore(subscribeToAuth, getAuthState, getServerAuthState);
 

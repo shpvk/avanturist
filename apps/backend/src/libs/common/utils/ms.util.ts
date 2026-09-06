@@ -45,9 +45,6 @@ export type StringValue =
 	| `${number}${UnitAnyCase}`
 	| `${number} ${UnitAnyCase}`
 
-// ms('1 minute'); // вернет 60000
-// ms('2 hours'); // вернет 7200000
-// ms('500 ms'); // вернет 500
 export function ms(str: StringValue): number {
 	if (typeof str !== 'string' || str.length === 0 || str.length > 100) {
 		throw new Error(

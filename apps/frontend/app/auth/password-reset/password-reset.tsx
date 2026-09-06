@@ -7,7 +7,6 @@ import { AuthShell } from "../../_components/auth-shell";
 import { PasswordField } from "../../_components/password-field";
 import { confirmPasswordReset, requestPasswordReset } from "../../_lib/auth-api";
 
-/** Одна страница на два шага: запрос письма и установка нового пароля по токену. */
 export function PasswordReset() {
   const params = useSearchParams();
   const token = params.get("token");
@@ -37,7 +36,6 @@ function RequestStep() {
   }
 
   if (isSent) {
-    // Ответ одинаков и для существующего, и для неизвестного адреса.
     return (
       <AuthShell
         title="Проверьте почту"
@@ -94,7 +92,6 @@ function ConfirmStep({ token }: { token: string }) {
 
     try {
       await confirmPasswordReset(token, password, passwordRepeat);
-      // Смена пароля гасит все сессии, поэтому дальше только новый вход.
       router.push("/login");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось сменить пароль.");

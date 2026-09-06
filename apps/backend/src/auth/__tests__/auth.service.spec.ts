@@ -9,13 +9,17 @@ function createService(overrides: {
     user?: unknown;
     consumed?: unknown;
 } = {}) {
+    const user = overrides.user
+        ? { createdAt: new Date('2026-01-01T00:00:00.000Z'), ...(overrides.user as object) }
+        : null;
+
     const userService = {
-        findByEmail: jest.fn().mockResolvedValue(overrides.user ?? null),
+        findByEmail: jest.fn().mockResolvedValue(user),
         findById: jest.fn(),
         findByIdOrNull: jest.fn(),
         create: jest.fn(),
         markVerified: jest.fn().mockImplementation(async () => ({
-            ...(overrides.user as object),
+            ...(user as object),
             isVerified: true,
         })),
         updatePassword: jest.fn(),

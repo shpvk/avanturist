@@ -1,9 +1,3 @@
-/**
- * Refresh-токен живёт в localStorage, access — только в памяти вкладки.
- * Cookie в проекте не используются, поэтому HttpOnly здесь недоступен: цену
- * XSS снижает CSP из `worker/index.ts` — она обрезает каналы, по которым
- * украденный токен уходил бы наружу. Полной замены HttpOnly это не даёт.
- */
 const refreshStorageKey = "buildverdict.refresh";
 
 let accessToken: string | null = null;
@@ -18,7 +12,6 @@ export function getAccessToken(): string | null {
   return accessToken;
 }
 
-/** Токен считается протухшим за 30 секунд до срока: запас на дорогу до сервера. */
 export function isAccessTokenFresh(): boolean {
   return Boolean(accessToken) && Date.now() < accessExpiresAt - 30_000;
 }
@@ -38,7 +31,6 @@ export function setRefreshToken(token: string | null): void {
     if (token) window.localStorage.setItem(refreshStorageKey, token);
     else window.localStorage.removeItem(refreshStorageKey);
   } catch {
-    // Приватный режим или запрет на хранилище: сессия проживёт до перезагрузки.
   }
 }
 

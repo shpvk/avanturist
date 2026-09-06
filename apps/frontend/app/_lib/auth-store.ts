@@ -3,14 +3,9 @@ import type { AuthProfile, LoginPayload, RegisterPayload } from "./auth-types";
 
 export type AuthState = {
   user: AuthProfile | null;
-  /** true, пока идёт первое восстановление сессии из refresh-токена. */
   isLoading: boolean;
 };
 
-/**
- * Сессия живёт во внешнем сторе, а не в React-контексте: страницы рендерятся
- * как RSC, и провайдер из layout до их клиентских поддеревьев не дотягивается.
- */
 const serverState: AuthState = { user: null, isLoading: true };
 
 let state: AuthState = serverState;
@@ -41,7 +36,6 @@ export function setAuthUser(user: AuthProfile | null): void {
   emit({ user, isLoading: false });
 }
 
-/** Первое обращение поднимает сессию ротацией refresh-токена из localStorage. */
 export function ensureAuthInitialised(): void {
   if (initialised || typeof window === "undefined") return;
   initialised = true;

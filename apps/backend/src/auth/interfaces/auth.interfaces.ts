@@ -1,6 +1,5 @@
 import { UserRole } from '../../generated/prisma/enums';
 
-/** Полезная нагрузка access-токена. */
 export interface JwtPayload {
     sub: string;
     email: string;
@@ -8,11 +7,9 @@ export interface JwtPayload {
     isVerified: boolean;
     jti: string;
     familyId: string;
-    /** Время выпуска в секундах, его подставляет сам JWT. */
     iat?: number;
 }
 
-/** Пользователь, положенный в запрос после проверки access-токена. */
 export interface AuthenticatedUser {
     id: string;
     email: string;
@@ -22,13 +19,11 @@ export interface AuthenticatedUser {
     familyId: string;
 }
 
-/** Контекст запроса, который сохраняется вместе с refresh-сессией. */
 export interface SessionMeta {
     userAgent?: string;
     ip?: string;
 }
 
-/** Пара токенов, отдаваемая клиенту. */
 export interface TokenPair {
     accessToken: string;
     refreshToken: string;

@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
 import type { FormEvent } from "react";
 import { HideIcon, MuteIcon, RestoreIcon, UnmuteIcon } from "./moderation-icons";
-import { collapsedCommentCount } from "../_lib/build-data";
 import { formatMuteDeadline } from "../_lib/api-mapping";
 import { commentsLabel } from "../_lib/format";
 import type { ComposerState, ThreadModeration } from "../_hooks/use-build-thread";
@@ -16,39 +14,26 @@ const maxCommentLength = 500;
 type BuildCommentsProps = {
   buildId: string;
   comments: BuildComment[];
-  expanded: boolean;
+  count: number;
   draft: string;
-  /** Открыт ли композер, и если нет — почему. */
   composer: ComposerState;
-  /** Действия админа; у остальных — `null`, и ветка выглядит как обычно. */
   moderation: ThreadModeration | null;
   error: string | null;
-  onToggleExpanded: () => void;
-  onExpand: () => void;
   onDraftChange: (value: string) => void;
   onSubmit: (text: string) => void;
 };
 
-/** Comment thread under the random build: collapsed list, toggle and composer. */
 export function BuildComments({
   buildId,
   comments,
-  expanded,
+  count,
   draft,
   composer,
   moderation,
   error,
-  onToggleExpanded,
-  onExpand,
   onDraftChange,
   onSubmit,
 }: BuildCommentsProps) {
-  const visibleComments = useMemo(
-    () => (expanded ? comments : comments.slice(0, collapsedCommentCount)),
-    [comments, expanded],
-  );
-  const hiddenCommentCount = comments.length - visibleComments.length;
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = draft.trim();
@@ -63,32 +48,9 @@ export function BuildComments({
       <div className="build-comments-head">
         <span className="section-label">Комментарии</span>
         <div className="build-comments-tools">
-          <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(comments.length)}</span>
-          {comments.length > collapsedCommentCount && (
-            <button
-              className="comments-toggle"
-              type="button"
-              aria-expanded={expanded}
-              aria-controls={`comment-list-${buildId}`}
-              onClick={onToggleExpanded}
-            >
-              {expanded ? "Свернуть" : `Показать все (${comments.length})`}
-              <span aria-hidden="true">{expanded ? "▲" : "▼"}</span>
-            </button>
-          )}
+          <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(count)}</span>
         </div>
       </div>
-      <ol id={`comment-list-${buildId}`} className="comment-list" aria-live="polite">
-        {visibleComments.map((comment) => (
-          <CommentRow key={comment.id} comment={comment} moderation={moderation} />
-        ))}
-        {comments.length === 0 && <li className="comment-empty">Комментариев пока нет — напишите первый.</li>}
-      </ol>
-      {hiddenCommentCount > 0 && (
-        <button className="comments-more" type="button" onClick={onExpand}>
-          Ещё {commentsLabel(hiddenCommentCount)}
-        </button>
-      )}
       {composer.kind === "ready" || composerBusy ? (
         <form className="comment-composer" onSubmit={handleSubmit}>
           <label className="sr-only" htmlFor={`comment-${buildId}`}>Комментарий к билду</label>
@@ -110,13 +72,18 @@ export function BuildComments({
         <ComposerNotice state={composer} />
       )}
       {error && <p className="comment-error" role="alert">{error}</p>}
+      <ol id={`comment-list-${buildId}`} className="comment-list" aria-live="polite">
+        {comments.map((comment) => (
+          <CommentRow key={comment.id} comment={comment} moderation={moderation} />
+        ))}
+        {comments.length === 0 && <li className="comment-empty">Комментариев пока нет — напишите первый.</li>}
+      </ol>
     </section>
   );
 }
 
 function CommentRow({ comment, moderation }: { comment: BuildComment; moderation: ThreadModeration | null }) {
   const busy = moderation?.pendingId === comment.id;
-  // У демо-комментариев автора в базе нет, мутить некого.
   const authorId = comment.authorId;
 
   return (
@@ -161,7 +128,6 @@ function CommentRow({ comment, moderation }: { comment: BuildComment; moderation
   );
 }
 
-/** Композер закрыт: объясняем чем именно и что с этим делать. */
 function ComposerNotice({ state }: { state: ComposerState }) {
   if (state.kind === "anonymous") {
     return (

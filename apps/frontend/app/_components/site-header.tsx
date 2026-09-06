@@ -13,14 +13,15 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ view, theme, onViewChange, onThemeToggle, onAddBuild }: SiteHeaderProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="topbar">
       <div className="topbar-inner">
+        <button className="wordmark" type="button" onClick={() => onViewChange("random")} aria-label="BuildVerdict — главная">build<span>verdict</span></button>
         <nav className="header-nav" aria-label="Основные разделы">
-          <button className={view === "random" ? "active" : ""} type="button" aria-pressed={view === "random"} onClick={() => onViewChange("random")}>Случайный билд</button>
-          <button className={view === "all" ? "active" : ""} type="button" aria-pressed={view === "all"} onClick={() => onViewChange("all")}>Все билды</button>
+          <button className={view === "all" ? "active" : ""} type="button" aria-label="Все билды" aria-pressed={view === "all"} onClick={() => onViewChange("all")}>Билды</button>
+          {user && <button type="button" onClick={onAddBuild}>Добавить билд</button>}
         </nav>
         <button
           className={`theme-toggle ${theme}`}
@@ -33,22 +34,11 @@ export function SiteHeader({ view, theme, onViewChange, onThemeToggle, onAddBuil
           <span className="theme-icon" aria-hidden="true" />
         </button>
         <div className="header-actions">
-          <button className="primary-button" type="button" onClick={onAddBuild}>Добавить билд</button>
-          {user ? (
-            <button
-              className="account-button"
-              type="button"
-              onClick={() => void logout()}
-              aria-label={`Выйти из аккаунта ${user.displayName}`}
-            >
-              <span className="account-avatar" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</span>
-              <span className="account-copy"><strong>{user.displayName}</strong><small>Выйти</small></span>
-            </button>
-          ) : (
-            <Link className="login-button" href="/login">
-              <span className="person-icon" aria-hidden="true" />Войти
-            </Link>
-          )}
+          <Link className="profile-button" href="/profile" aria-label={user ? `Профиль: ${user.displayName}` : "Профиль"} title={user ? user.displayName : "Профиль"}>
+            {user
+              ? <span className="account-avatar" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</span>
+              : <span className="person-icon" aria-hidden="true" />}
+          </Link>
         </div>
       </div>
     </header>

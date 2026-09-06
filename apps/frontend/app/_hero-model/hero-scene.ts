@@ -10,14 +10,11 @@ export type HeroSceneOptions = {
   onContextLost: () => void;
 };
 
-/** Wheel rotation feel: radians per pixel of wheel delta, and the easing per frame. */
-const radiansPerWheelPixel = 0.0022;
-const wheelEasing = 0.22;
-/** One notch is ~120px; anything larger is a trackpad fling we clamp to stay controllable. */
+export const radiansPerWheelPixel = 0.007;
+const wheelEasing = 0.32;
 const maxWheelPixelsPerEvent = 180;
 const linePixels = 16;
 const pagePixels = 400;
-/** A page scroll this recent means the pointer just travelled over the model — don't hijack it. */
 const scrollChainingWindowMs = 220;
 
 function wheelPixels(event: WheelEvent): number {
@@ -29,13 +26,6 @@ function wheelPixels(event: WheelEvent): number {
   return Math.max(-maxWheelPixelsPerEvent, Math.min(maxWheelPixelsPerEvent, raw));
 }
 
-/**
- * Builds the WebGL stage for one hero and returns its disposer.
- *
- * Every resource is pushed on a stack as soon as it exists, so aborting mid-load (the
- * reader shuffled to another hero while the .glb was still downloading) still releases
- * the GL context instead of leaking it until the browser drops the oldest one.
- */
 export async function createHeroScene({ host, hero, slug, signal, onContextLost }: HeroSceneOptions): Promise<() => void> {
   const disposers: Array<() => void> = [];
   const dispose = () => {
@@ -89,7 +79,6 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
     canvas.style.touchAction = "pan-y";
     controls.enableDamping = false;
     controls.enablePan = false;
-    // Distance stays fixed: the wheel spins the model instead of zooming it.
     controls.enableZoom = false;
     controls.rotateSpeed = 0.7;
     controls.minPolarAngle = Math.PI * 0.08;
@@ -136,10 +125,6 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
       });
     });
 
-    // Every hero material in the catalogue carries a colour texture. GLTFLoader swallows
-    // an image it could not load (a CSP without blob:, a truncated .glb) and hands back a
-    // material with no map, which renders the hero as a white silhouette. Failing here
-    // keeps the poster on screen and leaves the reason in the console instead.
     if (litMaterials > 0 && texturedMaterials === 0) throw new Error("Hero model textures failed to load");
 
     dropUnposedProps(THREE, model);
@@ -154,9 +139,7 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
 
     camera.near = extent / 100;
     camera.far = extent * 100;
-    // Frame the whole model with margin: at a 32° vertical fov the full extent needs
-    // ~1.75x distance, so start further back instead of cropping the head and feet.
-    camera.position.set(extent * 0.78, extent * 0.14, extent * 2.15);
+    camera.position.set(extent * 0.42, extent * 0.1, extent * 1.85);
     camera.updateProjectionMatrix();
     controls.target.set(0, 0, 0);
     controls.minDistance = extent * 0.72;
@@ -184,13 +167,6 @@ export async function createHeroScene({ host, hero, slug, signal, onContextLost 
   }
 }
 
-/**
- * Mouse wheel spins the hero around its vertical axis. The rotation is eased over a few
- * frames so a chunky wheel notch reads as a turn rather than a jump.
- *
- * Exported for tests: the wheel contract (how much a notch turns, when the page keeps its
- * scroll) is worth pinning down without a GPU.
- */
 export function attachWheelRotation(canvas: HTMLCanvasElement, controls: OrbitControls, render: () => void): () => void {
   let pendingRotation = 0;
   let animationFrame = 0;
@@ -206,9 +182,7 @@ export function attachWheelRotation(canvas: HTMLCanvasElement, controls: OrbitCo
   };
 
   const handleWheel = (event: WheelEvent) => {
-    // Ctrl/Cmd + wheel is the browser's own zoom gesture — leave it alone.
     if (event.ctrlKey || event.metaKey) return;
-    // The pointer only crossed the model during a page scroll; keep scrolling.
     if (performance.now() - lastPageScrollAt < scrollChainingWindowMs) return;
 
     event.preventDefault();
@@ -230,7 +204,6 @@ export function attachWheelRotation(canvas: HTMLCanvasElement, controls: OrbitCo
   };
 }
 
-/** Arrow keys give the same orbit to keyboard users; Shift turns further per press. */
 function attachKeyboardRotation(canvas: HTMLCanvasElement, controls: OrbitControls, render: () => void): () => void {
   const handleKeyDown = (event: KeyboardEvent) => {
     const step = event.shiftKey ? 0.18 : 0.08;
@@ -248,21 +221,9 @@ function attachKeyboardRotation(canvas: HTMLCanvasElement, controls: OrbitContro
   return () => canvas.removeEventListener("keydown", handleKeyDown);
 }
 
-/**
- * The equipment slots Valve's reference model leaves unposed. In game they are attached
- * to hand bones at runtime; in the file itself they sit wherever the author left them —
- * Anti-Mage's blades lie on the floor under his feet, Pudge's hook stands a metre to his
- * right. Nothing in the .glb says where they belong (its single animation take carries no
- * channels), so the stage shows the hero without them, which also keeps the framing box
- * around the figure instead of around the floor.
- */
 const unposedPropName = /_(weapon|offhand)$/;
 
-/**
- * Removes the unposed weapons and frees them at once: they are separate skinned meshes
- * with their own textures, so the hero loses nothing and the GPU never sees the upload.
- */
-function dropUnposedProps(THREE: ThreeModule, model: Group): void {
+export function dropUnposedProps(THREE: ThreeModule, model: Group): void {
   const props: Array<InstanceType<ThreeModule["Mesh"]>> = [];
   model.traverse((object) => {
     if (object instanceof THREE.Mesh && unposedPropName.test(object.name)) props.push(object);

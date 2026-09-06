@@ -18,17 +18,11 @@ interface TurnstileVerifyResponse {
     'error-codes'?: string[];
 }
 
-/**
- * Проверяет токен Cloudflare Turnstile из поля `turnstileToken` в теле запроса.
- * При выключенном TURNSTILE_ENABLED пропускает всё: так работает локальная разработка.
- */
 @Injectable()
 export class TurnstileGuard implements CanActivate {
     private readonly logger = new Logger(TurnstileGuard.name);
 
     public constructor(private readonly configService: ConfigService) {
-        // Молча выключенная капча в проде — открытая дверь в регистрацию и в
-        // рассылку писем на чужие адреса. Пусть это хотя бы видно в логах.
         if (!IS_DEV_ENV && !this.enabled()) {
             this.logger.warn(
                 'TURNSTILE_ENABLED is off: registration, login and email forms have no captcha.',

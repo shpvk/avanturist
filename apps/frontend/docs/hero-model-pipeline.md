@@ -30,7 +30,9 @@ build publishes only the runtime GLB files.
 ## Runtime and production
 
 `app/_hero-model/hero-scene.ts` loads GLB through Three.js `GLTFLoader`. Dragging rotates
-the model; the wheel adds inertial horizontal rotation. If WebGL, the GLB request or the
+the model; the wheel adds inertial horizontal rotation. While the model downloads,
+`app/_hero-model/hero-model-viewer.tsx` shows only the stage background and a loading
+indicator, so a different pose never flashes first. If WebGL, the GLB request or the
 embedded textures fail, the viewer leaves the static poster visible instead of showing an
 untextured white silhouette — `GLTFLoader` swallows an image it cannot load and returns a
 material with no `map`, so the scene checks for that explicitly.
