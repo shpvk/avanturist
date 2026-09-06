@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import Image from "next/image";
 import { BuildComments } from "./build-comments";
+import { DeleteBuildButton } from "./delete-build-button";
 import { InventoryPanel } from "./inventory-panel";
 import HeroModelViewer from "../_hero-model/hero-model-viewer";
 import { heroSlug, voteOptions } from "../_lib/build-data";
@@ -12,19 +14,20 @@ import type { Build, Vote } from "../_lib/types";
 type RandomBuildViewProps = {
   build: Build;
   vote: Vote | null;
-  /** A vote still being saved: counted into the bar until the API answers with its own tally. */
   pendingVote: Vote | null;
-  /** Обсуждение под билдом целиком: черновик, состояние композера, модерация. */
   thread: BuildThread;
   onVote: (vote: Vote) => void;
   onNext: () => void;
+  onPrevious: () => void;
+  canGoBack: boolean;
+  canDelete: boolean;
+  onDelete: () => Promise<void>;
 };
 
-export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNext }: RandomBuildViewProps) {
+export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNext, onPrevious, canGoBack, canDelete, onDelete }: RandomBuildViewProps) {
   const displayedVotes = useMemo(() => votePercentages(build.votes, pendingVote), [build.votes, pendingVote]);
   const slug = heroSlug(build.heroImage);
 
-  // A vote counts immediately and hands the reader the next build — no confirmation step.
   const handleVote = (value: Vote) => {
     onVote(value);
     onNext();
@@ -34,15 +37,20 @@ export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNe
     <main className="random-main">
       <article className="random-card dota-stage" aria-label="Случайный билд">
         <div className="dota-build-panel">
-          <h1 className="dota-build-title">{build.title}</h1>
           <div className="dota-panel-header">
-            <div className="dota-hero-identity">
-              <h2>{build.hero}</h2>
+            <Image className="dota-player-avatar" src={build.avatar} alt="" width={72} height={72} loading="lazy" unoptimized />
+            <div className="dota-panel-meta">
+              <p className="dota-player-name">
+                <span className="sr-only">Автор: </span>
+                <strong title={`Репутация: ${build.reputation}`}>{build.author}</strong>
+                <i title={`Репутация: ${build.reputation}`}>[{build.reputation}]</i>
+              </p>
+              <div className="dota-hero-identity">
+                <h2>{build.hero}</h2>
+              </div>
             </div>
           </div>
-          <div className="dota-panel-meta">
-            <span className="build-author">Автор: <strong title={`Репутация: ${build.reputation}`}>{build.author}</strong></span>
-          </div>
+          <h1 className="dota-build-title">{build.title}</h1>
           <div className="dota-inventory"><InventoryPanel items={build.items} /></div>
         </div>
 
@@ -58,6 +66,8 @@ export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNe
               </button>
             ))}
           </div>
+          {canDelete && <DeleteBuildButton title={build.title} onDelete={onDelete} />}
+          <button className="prev-build-button" type="button" onClick={onPrevious} disabled={!canGoBack}><span aria-hidden="true">←</span> Предыдущий билд</button>
           <button className="next-build-button" type="button" onClick={onNext}>Следующий билд <span aria-hidden="true">→</span></button>
         </aside>
       </article>
@@ -65,6 +75,7 @@ export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNe
         <BuildComments
           buildId={build.id}
           comments={build.comments}
+          count={build.commentCount}
           draft={thread.draft}
           composer={thread.composer}
           moderation={thread.moderation}

@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { itemImageBase } from "../app/_lib/dota-items.ts";
+import { heroImageBase } from "../app/_lib/dota-cdn.ts";
+
 function commentList(html) {
   return html.match(/<ol id="comment-list-[^"]*"[\s\S]*?<\/ol>/)?.[0] ?? "";
 }
@@ -17,10 +20,6 @@ async function render() {
   );
 }
 
-/**
- * Renders with the Nest API answered by `handler`. Every test stubs it, so the result
- * never depends on whether a backend happens to be running on this machine.
- */
 async function renderWith(handler) {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
@@ -36,7 +35,6 @@ async function renderWith(handler) {
   }
 }
 
-/** The API is unreachable: the page must fall back to the seeded demo builds. */
 function renderOffline() {
   return renderWith(() => {
     throw new TypeError("fetch failed");
@@ -54,8 +52,8 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /<html lang="ru" data-theme="dark">/i);
   assert.match(html, /<title>BuildVerdict — оцени билды Dota 2<\/title>/i);
   assert.doesNotMatch(html, /Поиск билдов и героев/);
-  assert.match(html, /Добавить билд/);
-  // The header carries a profile icon; /profile is what sends a guest on to the sign-in form.
+  assert.doesNotMatch(html, /Добавить билд/);
+  assert.doesNotMatch(html, /class="delete-build/);
   assert.match(html, /href="\/profile" class="profile-button"/);
   assert.doesNotMatch(html, /signin-with-chatgpt/);
   assert.doesNotMatch(html, /type="password"|Продолжить с Google/);
@@ -64,16 +62,17 @@ test("server-renders the BuildVerdict homepage", async () => {
   assert.match(html, /Все билды/);
   assert.doesNotMatch(html, /Как тебе эта сборка|Оценить билд|Спасибо за голос/);
   assert.match(html, /Следующий билд/);
+  // История навигации пуста на первой сборке, поэтому «назад» отключено.
+  assert.match(html, /class="prev-build-button" type="button" disabled=""/);
+  assert.match(html, /Предыдущий билд/);
   assert.doesNotMatch(html, /Написать комментарий/);
   assert.match(html, /placeholder="Что думаете об этой сборке\?"/);
   assert.match(html, /3 комментария</);
   assert.match(html, /class="comment-item"/);
   assert.match(html, /Каю на антимаге/);
-  // The whole thread renders at once — there is nothing left to expand.
   assert.equal((html.match(/class="comment-item"/g) ?? []).length, 3);
   assert.match(commentList(html), /Муншард последним предметом/);
   assert.doesNotMatch(html, /Показать все|Свернуть|comments-toggle|comments-more/);
-  // The composer comes before the thread it belongs to.
   assert.ok(html.indexOf('class="comment-composer"') < html.indexOf('class="comment-list"'));
   assert.doesNotMatch(html, />(?:27|34|38|41|56) комментариев</);
   assert.match(html, /Ситуативно/);
@@ -105,10 +104,12 @@ test("renders one random build with three vote actions", async () => {
   assert.equal((html.match(/class="vote-bar"/g) ?? []).length, 0);
   assert.match(html, /<h1 class="dota-build-title">Антимаг без антимагии<\/h1>/);
   assert.equal((html.match(/class="inventory-slot main"/g) ?? []).length, 6);
-  // The neutral and the shard sit in their own slots; Anti-Mage carries no scepter, so that one is empty.
+  assert.equal((html.match(/class="inventory-slot backpack/g) ?? []).length, 3);
   assert.match(html, /class="inventory-slot neutral"/);
   assert.match(html, /class="inventory-slot shard"/);
   assert.match(html, /class="inventory-slot scepter empty"/);
+  assert.ok(html.indexOf('inventory-slot scepter') < html.indexOf('class="inventory-main"'));
+  assert.ok(html.indexOf('class="inventory-main"') < html.indexOf('inventory-slot neutral'));
   assert.match(html, /alt="Conjurer&#x27;s Catalyst"/);
 });
 
@@ -124,22 +125,22 @@ const apiBuilds = [
     heroId: "pudge",
     items: ["blade_mail", "heart"],
     author: "HookMaster",
+    authorId: "22222222-2222-4222-8222-222222222222",
     createdAt: "2026-01-05T12:00:00.000Z",
-    votes: [
-      { id: "v1", buildId: "11111111-1111-4111-8111-111111111111", verdict: "positive", createdAt: "2026-01-05T12:01:00.000Z" },
-      { id: "v2", buildId: "11111111-1111-4111-8111-111111111111", verdict: "positive", createdAt: "2026-01-05T12:02:00.000Z" },
-      { id: "v3", buildId: "11111111-1111-4111-8111-111111111111", verdict: "positive", createdAt: "2026-01-05T12:03:00.000Z" },
-      { id: "v4", buildId: "11111111-1111-4111-8111-111111111111", verdict: "negative", createdAt: "2026-01-05T12:04:00.000Z" },
-    ],
-    comments: [
-      { id: "c1", buildId: "11111111-1111-4111-8111-111111111111", author: "TotemPower", text: "Крюк решает, остальное — детали.", createdAt: "2026-01-06T09:00:00.000Z" },
-    ],
+    votes: { positive: 3, situational: 0, negative: 1 },
+    commentCount: 1,
+    authorReputation: 3,
   },
 ];
 
-/** Renders the page against a stubbed feed, covering the server read path end to end. */
 async function renderWithApi(heroes = apiHeroes, builds = apiBuilds) {
-  const response = await renderWith((url) => Response.json(url.endsWith("/heroes") ? heroes : builds));
+  const response = await renderWith((url) =>
+    Response.json(
+      url.includes("/heroes")
+        ? heroes
+        : { items: builds, total: builds.length, page: 1, pageSize: 12 },
+    ),
+  );
   return response.text();
 }
 
@@ -154,13 +155,11 @@ test("renders the build the API returned, not the seeded demo one", async () => 
 
 test("derives the tally, verdict, reputation and dates the API does not store", async () => {
   const html = await renderWithApi();
-  // Three likes and one dislike out of four votes.
   assert.match(html, /aria-label="За 75%"/);
   assert.match(html, /aria-label="Ситуативно 0%"/);
   assert.match(html, /aria-label="Против 25%"/);
   assert.match(html, /title="Репутация: 3"/);
   assert.match(html, /1 комментарий</);
-  assert.match(html, /<span>6 января<\/span>/);
 });
 
 test("survives an API with no builds published yet", async () => {
@@ -168,4 +167,18 @@ test("survives an API with no builds published yet", async () => {
   assert.match(html, /Билдов с такими фильтрами пока нет/);
   assert.doesNotMatch(html, /Антимаг без антимагии/);
   assert.doesNotMatch(html, /class="random-card dota-stage"/);
+});
+
+test("CSP пропускает CDN, с которого каталог грузит иконки", async () => {
+  const response = await renderOffline();
+  const policy = response.headers.get("content-security-policy") ?? "";
+  const imgSrc = policy.split(";").map((part) => part.trim()).find((part) => part.startsWith("img-src"));
+
+  assert.ok(imgSrc, "в CSP нет директивы img-src");
+  for (const base of [itemImageBase, heroImageBase]) {
+    assert.ok(
+      imgSrc.includes(new URL(base).origin),
+      `img-src не пропускает ${new URL(base).origin}`,
+    );
+  }
 });

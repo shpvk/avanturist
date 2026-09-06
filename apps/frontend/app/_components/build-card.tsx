@@ -1,10 +1,10 @@
 import Image from "next/image";
+import { DeleteBuildButton } from "./delete-build-button";
 import { ItemIcons } from "./item-icons";
 import { commentsLabel } from "../_lib/format";
-import { mainSlotCount, splitInventory } from "../_lib/inventory";
+import { splitInventory } from "../_lib/inventory";
 import type { Build } from "../_lib/types";
 
-/** The share of "like" votes is the only tally the feed card reports. */
 function approvalTone(share: number): string {
   if (share >= 60) return "high";
   return share >= 40 ? "mixed" : "low";
@@ -27,11 +27,9 @@ function CommentIcon() {
   );
 }
 
-/** Feed card. The first card loads its hero art eagerly to keep LCP on the fold. */
-export function BuildCard({ build, index, onOpen }: { build: Build; index: number; onOpen: () => void }) {
+export function BuildCard({ build, index, onOpen, canDelete = false, onDelete }: { build: Build; index: number; onOpen: () => void; canDelete?: boolean; onDelete?: () => Promise<void> }) {
   const approval = build.votes[0];
-  // The card keeps the six carried slots; the scepter, shard and neutral belong to the build page.
-  const carried = splitInventory(build.items).main.slice(0, mainSlotCount);
+  const carried = splitInventory(build.items).main;
 
   return (
     <article className="build-card">
@@ -47,9 +45,10 @@ export function BuildCard({ build, index, onOpen }: { build: Build; index: numbe
           <span className={`build-card-approval ${approvalTone(approval)}`} aria-label={`За ${approval}%`}>
             <span aria-hidden="true">{approval}%</span><ThumbIcon />
           </span>
-          <span className="build-card-comments" aria-label={commentsLabel(build.comments.length)}>
-            <CommentIcon /><span aria-hidden="true">{build.comments.length}</span>
+          <span className="build-card-comments" aria-label={commentsLabel(build.commentCount)}>
+            <CommentIcon /><span aria-hidden="true">{build.commentCount}</span>
           </span>
+          {canDelete && onDelete && <DeleteBuildButton className="build-card-delete" title={build.title} onDelete={onDelete} />}
         </div>
       </div>
     </article>

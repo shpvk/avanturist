@@ -1,27 +1,20 @@
 import { dotaItems } from "./dota-items";
 
-/** A build split the way Dota shows one: carried items, the Aghanim's upgrades, the neutral. */
 export type Inventory = {
-  /** Carried items in build order, padded with empty slots up to a full inventory. */
   main: Array<string | null>;
+  backpack: Array<string | null>;
   scepter: string | null;
   shard: string | null;
   neutral: string | null;
 };
 
-/** Aghanim's Scepter and the Blessing it upgrades into share the one scepter slot. */
 const scepterIds = new Set(["ultimate_scepter", "ultimate_scepter_2"]);
 const shardId = "aghanims_shard";
 const neutralIds = new Set(dotaItems.filter((item) => item.category === "neutral").map((item) => item.id));
 
-/** Dota carries six items; the dedicated slots hold everything else. */
 export const mainSlotCount = 6;
+export const backpackSlotCount = 3;
 
-/**
- * Builds are stored as one flat list, so the dedicated slots are read out of it: the first
- * scepter, shard and neutral item claim their own slot and the rest stay carried. An
- * unusually long build keeps every item — the carried grid simply grows another row.
- */
 export function splitInventory(items: string[]): Inventory {
   let scepter: string | null = null;
   let shard: string | null = null;
@@ -35,11 +28,38 @@ export function splitInventory(items: string[]): Inventory {
     else carried.push(item);
   }
 
-  const slots = Math.max(mainSlotCount, Math.ceil(carried.length / 3) * 3);
+  const stowed = carried.slice(mainSlotCount);
+  const backpackSlots = Math.max(backpackSlotCount, Math.ceil(stowed.length / backpackSlotCount) * backpackSlotCount);
   return {
-    main: Array.from({ length: slots }, (_, index) => carried[index] ?? null),
+    main: Array.from({ length: mainSlotCount }, (_, index) => carried[index] ?? null),
+    backpack: Array.from({ length: backpackSlots }, (_, index) => stowed[index] ?? null),
     scepter,
     shard,
     neutral,
   };
+}
+
+function carriedOf(inventory: Inventory): string[] {
+  return [...inventory.main, ...inventory.backpack].filter((entry): entry is string => entry !== null);
+}
+
+export function placeItem(items: string[], item: string, slot: number): string[] {
+  const inventory = splitInventory(items);
+  const carried = carriedOf(inventory).filter((entry) => entry !== item);
+  carried.splice(Math.min(Math.max(slot, 0), carried.length), 0, item);
+
+  const dedicated = [inventory.scepter, inventory.shard, inventory.neutral]
+    .filter((entry): entry is string => entry !== null && entry !== item);
+
+  return [...dedicated, ...carried];
+}
+
+export function dropItem(items: string[], item: string): string[] {
+  return items.filter((entry) => entry !== item);
+}
+
+export function inventorySize(items: string[]): number {
+  const inventory = splitInventory(items);
+  return carriedOf(inventory).length
+    + [inventory.scepter, inventory.shard, inventory.neutral].filter(Boolean).length;
 }

@@ -2,7 +2,6 @@ import Image from "next/image";
 import { itemImage, itemLabel } from "../_lib/build-data";
 import { splitInventory } from "../_lib/inventory";
 
-/** An empty scepter or shard slot still shows what belongs there, faded out. */
 const slotPlaceholder: Record<string, string> = { scepter: "ultimate_scepter", shard: "aghanims_shard" };
 
 function InventorySlot({ item, kind }: { item: string | null; kind: string }) {
@@ -22,20 +21,20 @@ function InventorySlot({ item, kind }: { item: string | null; kind: string }) {
   );
 }
 
-/** The build as a Dota inventory: the neutral, the six carried items, the scepter and the shard. */
 export function InventoryPanel({ items }: { items: string[] }) {
-  const { main, scepter, shard, neutral } = splitInventory(items);
+  const { main, backpack, scepter, shard, neutral } = splitInventory(items);
 
   return (
     <div className="dota-inventory-grid" role="group" aria-label="Предметы сборки">
-      <div className="inventory-column"><InventorySlot item={neutral} kind="neutral" /></div>
-      <div className="inventory-main">
-        {main.map((item, index) => <InventorySlot key={`${item ?? "empty"}-${index}`} item={item} kind="main" />)}
-      </div>
-      <div className="inventory-column">
+      <div className="inventory-column aghanims">
         <InventorySlot item={scepter} kind="scepter" />
         <InventorySlot item={shard} kind="shard" />
       </div>
+      <div className="inventory-main">
+        {main.map((item, index) => <InventorySlot key={`main-${item ?? "empty"}-${index}`} item={item} kind="main" />)}
+        {backpack.map((item, index) => <InventorySlot key={`backpack-${item ?? "empty"}-${index}`} item={item} kind="backpack" />)}
+      </div>
+      <div className="inventory-column"><InventorySlot item={neutral} kind="neutral" /></div>
     </div>
   );
 }

@@ -1,13 +1,9 @@
 import { isoDay } from "./api-mapping";
 import { dotaItems, itemImageBase, type DotaItem } from "./dota-items";
 import { createId } from "./id";
-import type { Build, HeroOption, ItemFilter, Vote } from "./types";
+import type { Build, HeroOption, Vote } from "./types";
 
-/**
- * Offline demo feed. The real content comes from the API (`_lib/api.ts`); these builds
- * only stand in when the backend cannot be reached, so the page is never blank.
- */
-const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
+const seedBuilds: Array<Omit<Build, "heroId" | "createdAt" | "commentCount">> = [
   {
     id: "anti-mage-mana-pressure", hero: "Anti-Mage", heroImage: "/assets/heroes/antimage.png", title: "Антимаг без антимагии",
     role: "Керри", roleClass: "carry",
@@ -70,7 +66,7 @@ const seedBuilds: Array<Omit<Build, "heroId" | "createdAt">> = [
 export const demoBuilds: Build[] = seedBuilds.map((build) => ({
   ...build,
   heroId: heroSlug(build.heroImage),
-  // Seeded builds only carry a day; midday keeps them ordered the way they are written.
+  commentCount: build.comments.length,
   createdAt: `${build.dateTime}T12:00:00.000Z`,
 }));
 
@@ -84,22 +80,11 @@ const seedHeroes: Array<Omit<HeroOption, "id">> = [
 
 export const demoHeroes: HeroOption[] = seedHeroes.map((hero) => ({ ...hero, id: heroSlug(hero.heroImage) }));
 
-/** The Dota shop by id: what the picker offers, and what icons and labels resolve against. */
 const itemsById = new Map(dotaItems.map((item) => [item.id, item]));
 
-/** Every item the picker can offer, alphabetical; search and categories narrow it down. */
 export const itemOptions: DotaItem[] = dotaItems;
 
-export const itemCategoryOptions: Array<{ value: ItemFilter; label: string }> = [
-  { value: "all", label: "Все" },
-  { value: "basic", label: "Базовые" },
-  { value: "upgrade", label: "Составные" },
-  { value: "consumable", label: "Расходники" },
-  { value: "neutral", label: "Нейтральные" },
-];
-
-/** A full Dota inventory: six carried items plus the scepter, shard and neutral slots. */
-export const maxItemsPerBuild = 9;
+export const maxItemsPerBuild = 12;
 
 export const voteOptions: Array<{ value: Vote; icon: string; label: string; hint: string }> = [
   { value: "positive", icon: "👍", label: "Лайк", hint: "Билд хороший" },
@@ -107,10 +92,6 @@ export const voteOptions: Array<{ value: Vote; icon: string; label: string; hint
   { value: "negative", icon: "👎", label: "Дизлайк", hint: "Билд не работает" },
 ];
 
-/**
- * A build authored in this browser while the API is unreachable: it keeps the demo usable
- * offline and is replaced by the server's build as soon as the request goes through.
- */
 export function createLocalBuild(hero: HeroOption, title: string, items: string[], now: Date): Build {
   return {
     id: createId("local"),
@@ -127,6 +108,7 @@ export function createLocalBuild(hero: HeroOption, title: string, items: string[
     verdict: "Нет оценок",
     verdictType: "neutral",
     votes: [0, 0, 0],
+    commentCount: 0,
     comments: [],
     date: "сегодня",
     dateTime: isoDay(now),
@@ -134,22 +116,15 @@ export function createLocalBuild(hero: HeroOption, title: string, items: string[
   };
 }
 
-/** Readable item name for alt text and tooltips; unknown ids degrade to their slug. */
 export function itemLabel(item: string): string {
   return itemsById.get(item)?.name ?? item.replaceAll("_", " ");
 }
 
-/**
- * Icon for an item id. Builds saved before a patch can hold ids the catalog no longer
- * lists, and Valve's CDN still serves those, so the id itself is the fallback.
- */
 export function itemImage(item: string): string {
   return itemsById.get(item)?.image ?? `${itemImageBase}/${item}.png`;
 }
 
-/** Asset slug behind a hero image path: "/assets/heroes/pudge.png" -> "pudge". */
 export function heroSlug(heroImage: string): string {
   const fileName = heroImage.split("/").at(-1) ?? "";
   return fileName.replace(/\.(png|jpg|jpeg|webp)$/i, "") || "antimage";
 }
-
