@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
 import { AuthModule } from './auth/auth.module';
 import { BuildsModule } from './builds/builds.module';
+import { VotesModule } from './votes/votes.module';
 import { CommentsModule } from './comments/comments.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -32,13 +33,13 @@ import { RolesGuard } from './auth/guards/roles.guard';
         ItemsModule,
         AuthModule,
         BuildsModule,
+        VotesModule,
         CommentsModule,
         PrismaModule,
         UserModule,
     ],
     providers: [
         { provide: APP_GUARD, useClass: ThrottlerGuard },
-        // Закрыто по умолчанию: публичные маршруты помечаются декоратором @Public().
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: APP_GUARD, useClass: RolesGuard },
     ],

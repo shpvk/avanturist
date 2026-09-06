@@ -1,26 +1,22 @@
 import { fetchBuilds, fetchHeroes } from "./api";
 import { mapFeed, mapHeroes } from "./api-mapping";
 import { demoBuilds, demoHeroes } from "./build-data";
+import { pageSize } from "../_hooks/use-build-feed";
 import type { Build, HeroOption } from "./types";
 
 export type FeedSnapshot = {
   builds: Build[];
+  total: number;
   heroes: HeroOption[];
-  /** "demo" means the API could not be reached and the page is showing seeded builds. */
   source: "api" | "demo";
 };
 
-/**
- * Server-side read of the whole feed: heroes and builds in one round trip each, mapped
- * into the view model. A failure is not fatal — the page falls back to the demo builds
- * rather than showing an empty shell.
- */
 export async function loadFeed(): Promise<FeedSnapshot> {
   try {
-    const [apiHeroes, apiBuilds] = await Promise.all([fetchHeroes(), fetchBuilds()]);
+    const [apiHeroes, feed] = await Promise.all([fetchHeroes(), fetchBuilds({ page: 1, pageSize })]);
     const heroes = mapHeroes(apiHeroes);
-    return { builds: mapFeed(apiBuilds, heroes), heroes, source: "api" };
+    return { builds: mapFeed(feed.items, heroes), total: feed.total, heroes, source: "api" };
   } catch {
-    return { builds: demoBuilds, heroes: demoHeroes, source: "demo" };
+    return { builds: demoBuilds, total: demoBuilds.length, heroes: demoHeroes, source: "demo" };
   }
 }

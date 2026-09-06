@@ -1,25 +1,18 @@
 import type { Vote } from "./types";
 
-/**
- * The shapes the Nest API actually returns (apps/backend/src). Kept apart from the view
- * model in `types.ts`: the API knows nothing about roles, avatars or verdict wording.
- */
-
 export type ApiHero = {
   id: string;
   name: string;
   image: string;
   primaryAttr?: string;
   attackType?: string;
-  /** OpenDota's role tags; the lane badge falls back to them. */
   roles?: string[];
 };
 
-export type ApiVote = {
-  id: string;
-  buildId: string;
-  verdict: Vote;
-  createdAt: string;
+export type ApiVoteTally = {
+  positive: number;
+  situational: number;
+  negative: number;
 };
 
 export type ApiComment = {
@@ -29,11 +22,9 @@ export type ApiComment = {
   authorId: string;
   text: string;
   createdAt: string;
-  /** Ниже — поля модерации: API присылает их только администратору. */
   isDeleted?: boolean;
   deletedAt?: string | null;
   authorMuted?: boolean;
-  /** `null` при бессрочном муте — вместе с `authorMuted: true`. */
   authorMutedUntil?: string | null;
 };
 
@@ -42,15 +33,29 @@ export type ApiBuild = {
   title: string;
   heroId: string;
   items: string[];
-  /** Отображаемое имя автора; `authorId` — его идентификатор в базе. */
   author: string;
   authorId?: string;
   createdAt: string;
-  votes?: ApiVote[];
-  comments?: ApiComment[];
+  votes: ApiVoteTally;
+  commentCount: number;
+  authorReputation: number;
 };
 
-/** Автора сервер берёт из access-токена, клиент его не передаёт. */
+export type ApiFeedPage = {
+  items: ApiBuild[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type FeedQuery = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  hero?: string;
+  sort?: "new" | "popular";
+};
+
 export type CreateBuildPayload = {
   title: string;
   heroId: string;
@@ -62,12 +67,10 @@ export type CreateVotePayload = {
   voterKey: string;
 };
 
-/** Автора сервер берёт из access-токена, как и у билда. */
 export type CreateCommentPayload = {
   text: string;
 };
 
-/** Мут: срок в минутах, без него — бессрочно. */
 export type MutePayload = {
   minutes?: number;
   reason?: string;

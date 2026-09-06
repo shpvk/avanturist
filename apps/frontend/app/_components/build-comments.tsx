@@ -14,20 +14,19 @@ const maxCommentLength = 500;
 type BuildCommentsProps = {
   buildId: string;
   comments: BuildComment[];
+  count: number;
   draft: string;
-  /** Открыт ли композер, и если нет — почему. */
   composer: ComposerState;
-  /** Действия админа; у остальных — `null`, и ветка выглядит как обычно. */
   moderation: ThreadModeration | null;
   error: string | null;
   onDraftChange: (value: string) => void;
   onSubmit: (text: string) => void;
 };
 
-/** Comment thread under the random build: the composer first, then the whole thread. */
 export function BuildComments({
   buildId,
   comments,
+  count,
   draft,
   composer,
   moderation,
@@ -49,7 +48,7 @@ export function BuildComments({
       <div className="build-comments-head">
         <span className="section-label">Комментарии</span>
         <div className="build-comments-tools">
-          <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(comments.length)}</span>
+          <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(count)}</span>
         </div>
       </div>
       {composer.kind === "ready" || composerBusy ? (
@@ -85,7 +84,6 @@ export function BuildComments({
 
 function CommentRow({ comment, moderation }: { comment: BuildComment; moderation: ThreadModeration | null }) {
   const busy = moderation?.pendingId === comment.id;
-  // У демо-комментариев автора в базе нет, мутить некого.
   const authorId = comment.authorId;
 
   return (
@@ -130,7 +128,6 @@ function CommentRow({ comment, moderation }: { comment: BuildComment; moderation
   );
 }
 
-/** Композер закрыт: объясняем чем именно и что с этим делать. */
 function ComposerNotice({ state }: { state: ComposerState }) {
   if (state.kind === "anonymous") {
     return (

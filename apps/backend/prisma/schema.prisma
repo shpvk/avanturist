@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -28,10 +23,6 @@ model User {
 
   method AuthMethod
 
-  // Мут закрывает только комментарии: читать, голосовать и публиковать билды
-  // пользователь по-прежнему может. `mutedAt` — признак мута, `mutedUntil`
-  // пустой у бессрочного, поэтому «не замучен» и «замучен навсегда» не
-  // сливаются в одно значение.
   mutedAt    DateTime? @map("muted_at")
   mutedUntil DateTime? @map("muted_until")
   muteReason String?   @map("mute_reason")
@@ -43,7 +34,7 @@ model User {
   accounts Account[]
   builds   Build[]
   comments Comment[]
-  // Скрытые этим админом комментарии: связь переживает удаление админа.
+  votes    Vote[]
   moderatedComments Comment[] @relation("CommentModeration")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -99,12 +90,39 @@ model Build {
   userId String @map("user_id")
 
   comments Comment[]
+  votes    Vote[]
+
+  positiveVotes    Int @default(0) @map("positive_votes")
+  situationalVotes Int @default(0) @map("situational_votes")
+  negativeVotes    Int @default(0) @map("negative_votes")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([createdAt])
+  @@index([positiveVotes])
   @@map("builds")
+}
+
+model Vote {
+  id String @id @default(uuid())
+
+  verdict VoteVerdict
+
+  build   Build  @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  buildId String @map("build_id")
+
+  voterKey String  @map("voter_key")
+  voter    User?   @relation(fields: [voterId], references: [id], onDelete: SetNull)
+  voterId  String? @map("voter_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([buildId, voterKey])
+  @@index([voterId])
+  @@map("votes")
 }
 
 model Comment {
@@ -118,8 +136,6 @@ model Comment {
   author User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String @map("user_id")
 
-  // Модерация не стирает запись: скрытый комментарий остаётся виден админу и
-  // может быть возвращён в ветку.
   deletedAt   DateTime? @map("deleted_at")
   deletedBy   User?     @relation("CommentModeration", fields: [deletedById], references: [id], onDelete: SetNull)
   deletedById String?   @map("deleted_by_id")
@@ -136,6 +152,12 @@ model Comment {
 enum UserRole {
   REGULAR
   ADMIN
+}
+
+enum VoteVerdict {
+  POSITIVE
+  SITUATIONAL
+  NEGATIVE
 }
 
 enum AuthMethod {

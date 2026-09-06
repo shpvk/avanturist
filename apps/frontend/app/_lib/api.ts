@@ -3,17 +3,18 @@ import { authorizedFetch } from "./auth-api";
 import type {
   ApiBuild,
   ApiComment,
+  ApiFeedPage,
   ApiHero,
   ApiMute,
   CreateBuildPayload,
   CreateCommentPayload,
   CreateVotePayload,
+  FeedQuery,
   MutePayload,
 } from "./api-types";
 
 export { apiBaseUrl, ApiError } from "./api-base";
 
-/** The page must render even when the API is asleep, so server reads give up quickly. */
 const serverTimeoutMs = 2500;
 const mutationTimeoutMs = 8000;
 
@@ -26,15 +27,10 @@ async function request<T>(path: string, init: RequestInit & { timeoutMs?: number
   });
 
   if (!response.ok) throw new ApiError(response.status, await errorMessage(response, path, requestInit.method));
-  // 204 on logout, and anything else the API answers without a body.
   if (response.status === 204) return undefined as T;
   return (await response.json()) as T;
 }
 
-/**
- * The API explains a rejected request in `message` — a string, or one line per failed
- * validation rule. That wording is what the auth forms show, so keep it.
- */
 async function errorMessage(response: Response, path: string, method = "GET"): Promise<string> {
   const fallback = `${method} ${path} → ${response.status}`;
   const body = (await response.json().catch(() => null)) as { message?: unknown } | null;
@@ -48,11 +44,20 @@ export function fetchHeroes(timeoutMs = serverTimeoutMs): Promise<ApiHero[]> {
   return request<ApiHero[]>("/heroes", { timeoutMs });
 }
 
-export function fetchBuilds(timeoutMs = serverTimeoutMs): Promise<ApiBuild[]> {
-  return request<ApiBuild[]>("/builds", { timeoutMs });
+export function fetchBuilds(query: FeedQuery = {}, timeoutMs = serverTimeoutMs): Promise<ApiFeedPage> {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== "" && value !== "all") search.set(key, String(value));
+  }
+  const suffix = search.size > 0 ? `?${search}` : "";
+
+  return request<ApiFeedPage>(`/builds${suffix}`, { timeoutMs });
 }
 
-/** Публикация билда доступна только вошедшему пользователю с подтверждённой почтой. */
+export function fetchRandomBuild(timeoutMs = serverTimeoutMs): Promise<ApiBuild> {
+  return request<ApiBuild>("/builds/random", { timeoutMs });
+}
+
 export async function createBuild(payload: CreateBuildPayload): Promise<ApiBuild> {
   const response = await authorizedFetch("/builds", {
     method: "POST",
@@ -63,15 +68,16 @@ export async function createBuild(payload: CreateBuildPayload): Promise<ApiBuild
   return (await response.json()) as ApiBuild;
 }
 
-/** The API answers a vote with the whole build, tallies included. */
+export async function deleteBuild(buildId: string): Promise<void> {
+  const response = await authorizedFetch(`/builds/${buildId}`, { method: "DELETE" });
+
+  if (!response.ok) throw new ApiError(response.status, `DELETE /builds/${buildId} → ${response.status}`);
+}
+
 export function createVote(buildId: string, payload: CreateVotePayload): Promise<ApiBuild> {
   return request<ApiBuild>(`/builds/${buildId}/votes`, { method: "POST", body: JSON.stringify(payload) });
 }
 
-/**
- * Отказ в комментарии. Мут отличается от неподтверждённой почты не текстом, а
- * полем `mute`: интерфейс показывает автору срок, а не общее «нельзя».
- */
 export class CommentRejectedError extends ApiError {
   readonly mute: { until: string | null; reason: string | null } | null;
 
@@ -89,11 +95,9 @@ async function commentRejection(response: Response): Promise<CommentRejectedErro
   try {
     body = (await response.json()) as CommentErrorBody;
   } catch {
-    // Пустое или не-JSON тело: остаётся только код ответа.
   }
 
   const message = Array.isArray(body.message) ? body.message[0] : body.message;
-  // Мут сервер помечает наличием срока — даже пустого, если он бессрочный.
   const muted = "mutedUntil" in body;
 
   return new CommentRejectedError(
@@ -103,10 +107,6 @@ async function commentRejection(response: Response): Promise<CommentRejectedErro
   );
 }
 
-/**
- * Ветка комментариев отдельным запросом. Администратору сервер добавляет
- * скрытые комментарии и мут их авторов, поэтому запрос идёт с токеном.
- */
 export async function fetchComments(buildId: string): Promise<ApiComment[]> {
   const response = await authorizedFetch(`/builds/${buildId}/comments`);
 
@@ -124,7 +124,6 @@ export async function createComment(buildId: string, payload: CreateCommentPaylo
   return (await response.json()) as ApiComment;
 }
 
-/** Скрывает комментарий; ответ — тот же комментарий с пометкой модерации. */
 export async function hideComment(commentId: string): Promise<ApiComment> {
   return moderate(`/comments/${commentId}`, "DELETE");
 }
@@ -140,7 +139,6 @@ async function moderate(path: string, method: "POST" | "DELETE"): Promise<ApiCom
   return (await response.json()) as ApiComment;
 }
 
-/** Мут закрывает автору только комментарии. Без `minutes` — бессрочно. */
 export async function muteUser(userId: string, payload: MutePayload): Promise<ApiMute> {
   const response = await authorizedFetch(`/users/${userId}/mute`, {
     method: "POST",
