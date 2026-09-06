@@ -1,6 +1,24 @@
 # Local AI/tooling configuration
 .cloud/
 .codex/
+.claude/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.continue/
+.gemini/
+.roo/
+.aider*
+.mcp.json
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
+# Local product and planning notes (kept outside the repository)
+PRODUCT.md
+project overview.md
+docs/auth-plan.md
 
 # Environment variables and local secrets
 .env
