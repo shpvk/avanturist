@@ -9,7 +9,6 @@ function createService(overrides: {
     user?: unknown;
     consumed?: unknown;
 } = {}) {
-    // Поля, которые Prisma отдаёт всегда: тесты перечисляют только то, что им важно.
     const user = overrides.user
         ? { createdAt: new Date('2026-01-01T00:00:00.000Z'), ...(overrides.user as object) }
         : null;

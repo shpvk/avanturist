@@ -36,7 +36,6 @@ test("unposed equipment is removed from framing while belt props stay", () => {
   }
 });
 
-/** Minimal stand-ins for the browser pieces the wheel handler touches. */
 function createHarness() {
   const canvas = new EventTarget();
   const pageListeners = new Map();
@@ -65,7 +64,6 @@ function createHarness() {
       canvas.dispatchEvent(event);
       return event;
     },
-    /** Drain the eased rotation until the animation settles. */
     flush: () => {
       for (let guard = 0; guard < 500 && frames.length > 0; guard += 1) frames.shift()();
     },
@@ -88,7 +86,6 @@ afterEach(() => {
 test("one wheel notch turns the model by a readable angle", () => {
   harness.wheel({ deltaY: 120 });
   harness.flush();
-  // One notch has to read as a real turn rather than a nudge: roughly a sixth of a circle.
   const degrees = (harness.rotation * 180) / Math.PI;
   assert.equal(degrees > 35 && degrees < 65, true, `one notch turned ${degrees}°`);
   assert.equal(harness.renders > 1, true, "the eased rotation renders more than once");

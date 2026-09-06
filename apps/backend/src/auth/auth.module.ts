@@ -40,8 +40,6 @@ import { MailModule } from '../mail/mail.module';
         EmailTokenService,
         JwtStrategy,
         {
-            // Стратегия поднимается только с настроенными ключами: без них
-            // приложение должно стартовать, а маршрут — отвечать 503.
             provide: GoogleStrategy,
             inject: [ConfigService],
             useFactory: (configService: ConfigService) =>

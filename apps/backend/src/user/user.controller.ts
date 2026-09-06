@@ -16,11 +16,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../generated/prisma/enums';
 
-/** Состояние мута в том виде, в каком его читает интерфейс модератора. */
 export interface MuteView {
     userId: string;
     muted: boolean;
-    /** `null` у бессрочного мута и у снятого. */
     mutedUntil: string | null;
     reason: string | null;
 }
@@ -31,10 +29,6 @@ export interface MuteView {
 export class UserController {
     public constructor(private readonly userService: UserService) {}
 
-    /**
-     * Мут закрывает только комментарии: голосовать и публиковать билды
-     * пользователь продолжает.
-     */
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     @Post(':id/mute')

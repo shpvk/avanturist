@@ -1,9 +1,7 @@
-/** Reputation is stored as display text ("1 245"), so sorting needs the number back. */
 export function reputationValue(reputation: string): number {
   return Number(reputation.replaceAll(/\D/g, "")) || 0;
 }
 
-/** Russian plural: picks between "1 комментарий", "2 комментария", "5 комментариев". */
 export function plural(count: number, one: string, few: string, many: string): string {
   const lastTwoDigits = Math.abs(count) % 100;
   const lastDigit = lastTwoDigits % 10;
@@ -16,10 +14,6 @@ export function commentsLabel(count: number): string {
   return `${count} ${plural(count, "комментарий", "комментария", "комментариев")}`;
 }
 
-/**
- * Срок мута словами: «30 минут», «12 часов», «7 дней». Диалог показывает
- * длительность, а не дату — часы на сервере всё равно свои.
- */
 export function formatMinutes(total: number): string {
   if (total % 1_440 === 0) {
     const days = total / 1_440;

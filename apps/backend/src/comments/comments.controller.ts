@@ -28,10 +28,6 @@ import { UserRole } from '../generated/prisma/enums';
 export class BuildCommentsController {
     public constructor(private readonly commentsService: CommentsService) {}
 
-    /**
-     * Читать ветку может кто угодно, но ответ зависит от роли: токен здесь
-     * необязателен, поэтому маршрут публичный с мягким guard'ом.
-     */
     @Public()
     @UseGuards(OptionalJwtAuthGuard)
     @Get()
@@ -45,7 +41,6 @@ export class BuildCommentsController {
         );
     }
 
-    // Комментировать может вошедший с подтверждённой почтой и без мута.
     @ApiBearerAuth()
     @UseGuards(VerifiedGuard, NotMutedGuard)
     @Throttle({ medium: { ttl: 60_000, limit: 10 } })
@@ -65,7 +60,6 @@ export class BuildCommentsController {
 export class CommentsController {
     public constructor(private readonly commentsService: CommentsService) {}
 
-    /** Скрывает комментарий; запись остаётся и возвращается тем же вызовом. */
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     @Delete(':id')

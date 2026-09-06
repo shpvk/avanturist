@@ -6,7 +6,6 @@ type PaginationProps = {
   onChange: (page: number) => void;
 };
 
-/** Feed pager. A single page needs no controls, so the whole strip disappears. */
 export function Pagination({ page, pageCount, onChange }: PaginationProps) {
   if (pageCount < 2) return null;
 

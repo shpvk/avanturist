@@ -25,7 +25,6 @@ export function RegisterForm() {
 
     try {
       await register({ name, email, password, passwordRepeat });
-      // Вход уже состоялся: письмо о подтверждении ждёт, публикация до него закрыта.
       router.push("/?registered=1");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create the account.");

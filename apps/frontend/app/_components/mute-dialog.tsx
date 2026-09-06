@@ -6,11 +6,9 @@ import { useDialogA11y } from "../_hooks/use-dialog-a11y";
 import { formatMinutes } from "../_lib/format";
 import type { MutePayload } from "../_lib/api-types";
 
-/** Совпадает с `@Max` в MuteUserDto: дольше года мут выдаётся бессрочным. */
 const maxMuteMinutes = 525_600;
 const maxReasonLength = 200;
 
-/** Пресеты — только ускорение. Настоящий срок задаётся полем «другой срок». */
 const presets = [
   { id: "1h", label: "1 час", minutes: 60 },
   { id: "6h", label: "6 часов", minutes: 360 },
@@ -45,7 +43,6 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
 
   const isCustom = selected === "custom";
 
-  /** `null` — бессрочно, `undefined` — введённый срок не годится. */
   const minutes = useMemo<number | null | undefined>(() => {
     if (!isCustom) return presets.find((preset) => preset.id === selected)?.minutes ?? null;
 
@@ -58,7 +55,6 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
     return total > maxMuteMinutes ? undefined : total;
   }, [customUnit, customValue, isCustom, selected]);
 
-  /** Длительность, а не дата: точный срок автор увидит в бейдже после мута. */
   const duration = useMemo(() => {
     if (minutes === undefined) return null;
     return minutes === null ? "бессрочно" : `на ${formatMinutes(minutes)}`;

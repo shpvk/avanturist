@@ -6,15 +6,9 @@ import { createHeroScene } from "./hero-scene";
 
 type ViewerStatus = "loading" | "ready" | "fallback";
 
-/**
- * Show the loading indicator until the WebGL scene is ready. The static poster has
- * a different pose, so reserve it for failures (no WebGL, missing model, lost context)
- * instead of flashing it while the model loads.
- */
 export default function HeroModelViewer({ hero, slug, portrait }: { hero: string; slug: string; portrait?: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<ViewerStatus>("loading");
-  // Not every hero in the API catalog has a pre-rendered poster; the portrait covers the rest.
   const [poster, setPoster] = useState(`/assets/heroes/renders/${slug}.webp`);
 
   useEffect(() => {
@@ -33,7 +27,6 @@ export default function HeroModelViewer({ hero, slug, portrait }: { hero: string
       onContextLost: () => setStatus("fallback"),
     }).then(
       (dispose) => {
-        // The reader moved on while the scene was still being built.
         if (abortController.signal.aborted) {
           dispose();
           return;

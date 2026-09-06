@@ -11,10 +11,6 @@ import {
 export class CommentsService {
     public constructor(private readonly prismaService: PrismaService) {}
 
-    /**
-     * Ветка под билдом, от старых к новым. Скрытые комментарии видит только
-     * администратор — и видит их вместе с пометкой, чтобы отличать от живых.
-     */
     public async findForBuild(
         buildId: string,
         moderator: boolean,
@@ -45,10 +41,6 @@ export class CommentsService {
         return toPublicComment(comment, { moderator: false });
     }
 
-    /**
-     * Скрывает комментарий, не стирая его: автор и текст остаются в базе, а
-     * администратор может вернуть комментарий в ветку.
-     */
     public async hide(id: string, adminId: string): Promise<PublicComment> {
         await this.assertCommentExists(id);
 

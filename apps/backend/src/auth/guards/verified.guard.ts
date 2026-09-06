@@ -6,10 +6,6 @@ import {
 } from '@nestjs/common';
 import { AuthenticatedUser } from '../interfaces/auth.interfaces';
 
-/**
- * Публиковать билды и комментарии можно только с подтверждённой почтой.
- * Чтение ленты и голосование верификации не требуют.
- */
 @Injectable()
 export class VerifiedGuard implements CanActivate {
     public canActivate(context: ExecutionContext): boolean {

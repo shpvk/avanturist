@@ -9,12 +9,10 @@ const TTL_BY_TYPE: Record<TokenType, number> = {
     PASSWORD_RESET: 60 * 60 * 1000,
 };
 
-/** Одноразовые токены из писем: подтверждение почты и сброс пароля. */
 @Injectable()
 export class EmailTokenService {
     public constructor(private readonly prismaService: PrismaService) {}
 
-    /** Выдаёт новый токен, гася все прежние того же типа для этого адреса. */
     public async issue(email: string, type: TokenType): Promise<string> {
         const token = randomBytes(32).toString('base64url');
 
@@ -33,7 +31,6 @@ export class EmailTokenService {
         return token;
     }
 
-    /** Возвращает токен и сразу удаляет его: повторно им воспользоваться нельзя. */
     public async consume(token: string, type: TokenType): Promise<Token | null> {
         const stored = await this.prismaService.token.findUnique({
             where: { token },

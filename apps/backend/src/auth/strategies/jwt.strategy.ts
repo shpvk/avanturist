@@ -15,18 +15,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-            // Алгоритм закрепляем явно: иначе проверка приняла бы любой из
-            // подходящих к симметричному ключу.
             algorithms: ['HS256'],
         });
     }
 
-    /**
-     * В базу за пользователем не ходим: иначе теряется весь смысл короткого
-     * срока жизни. Свежие данные приходят при ротации. Единственная внешняя
-     * проверка — метка «все прежние токены отозваны», иначе выход со всех
-     * устройств и смена пароля не действовали бы до конца TTL access-токена.
-     */
     public async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
         const revoked = await this.tokenService.isAccessRevoked(
             payload.sub,

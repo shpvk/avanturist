@@ -17,16 +17,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { SessionMeta, TokenPair } from './interfaces/auth.interfaces';
 
-/**
- * Хеш случайной строки, ни от чего не подходящий. Нужен, чтобы на неизвестный
- * адрес и на аккаунт без пароля логин тратил столько же времени, сколько на
- * реальную проверку: иначе по времени ответа можно перебрать существующие
- * аккаунты, несмотря на одинаковый текст ошибки.
- */
 const DUMMY_PASSWORD_HASH =
     '$argon2id$v=19$m=65536,p=4,t=3$dLi8CevQ86dYIJ7hoMDE+A$mr33BzzBITpUIuryxLjbzfAre0wvV+rdq1ZWjcgTi2I';
 
-/** Ответ логина, регистрации и ротации. */
 export interface AuthResponse extends TokenPair {
     user: {
         id: string;
@@ -35,12 +28,9 @@ export interface AuthResponse extends TokenPair {
         picture: string | null;
         role: string;
         isVerified: boolean;
-        /** Мут закрывает комментарии; интерфейс знает об этом до отправки. */
         muted: boolean;
-        /** `null` при бессрочном муте и при снятом. */
         mutedUntil: string | null;
         muteReason: string | null;
-        /** Дата регистрации в ISO — её показывает страница профиля. */
         createdAt: string;
     };
 }
@@ -77,9 +67,6 @@ export class AuthService {
     public async login(dto: LoginDto, meta: SessionMeta): Promise<AuthResponse> {
         const user = await this.userService.findByEmail(dto.email);
 
-        // Один и тот же текст и то же время ответа на «нет пользователя» и
-        // «неверный пароль», чтобы форма логина не работала как проверка
-        // существования аккаунта.
         const passwordMatches = await verify(
             user?.password ?? DUMMY_PASSWORD_HASH,
             dto.password,
@@ -110,11 +97,6 @@ export class AuthService {
         await this.tokenService.revokeAllForUser(userId);
     }
 
-    /**
-     * Вход через Google. Аккаунт связывается с существующим пользователем только
-     * если Google подтвердил владение адресом — иначе чужой почтой можно было бы
-     * захватить аккаунт с паролем.
-     */
     public async loginWithGoogle(
         profile: GoogleProfile,
         meta: SessionMeta,
@@ -145,15 +127,12 @@ export class AuthService {
                 isVerified: true,
             }));
 
-        // Токены Google приложению не нужны — оно ходит в их API только один
-        // раз, при входе. Незачем держать в базе то, что утечёт вместе с ней.
         await this.userService.linkAccount({
             userId: user.id,
             provider: 'google',
             providerAccountId: profile.providerAccountId,
         });
 
-        // Google подтвердил адрес — старую неподтверждённую регистрацию можно открыть.
         const verified = user.isVerified
             ? user
             : await this.userService.markVerified(user.id);
@@ -161,7 +140,6 @@ export class AuthService {
         return this.buildResponse(verified, meta);
     }
 
-    /** Прячет пару токенов за одноразовым кодом для OAuth-редиректа. */
     public async stashForExchange(response: AuthResponse): Promise<string> {
         return this.tokenService.stashForExchange(
             {
@@ -180,7 +158,6 @@ export class AuthService {
         return { ...pair, user: this.publicUser(user) };
     }
 
-    /** Подтверждение почты: открывает публикацию билдов и комментариев. */
     public async verifyEmail(token: string): Promise<AuthResponse['user']> {
         const stored = await this.emailTokenService.consume(
             token,
@@ -204,10 +181,6 @@ export class AuthService {
         return this.publicUser(verified);
     }
 
-    /**
-     * Повторная отправка письма и запрос сброса отвечают одинаково независимо от
-     * того, есть ли такой адрес: иначе форма превращается в перебор пользователей.
-     */
     public async resendVerification(email: string): Promise<void> {
         const user = await this.userService.findByEmail(email);
 
@@ -231,7 +204,6 @@ export class AuthService {
         await this.mailService.sendPasswordReset(user.email, token);
     }
 
-    /** Смена пароля разлогинивает все устройства: старые сессии могли быть чужими. */
     public async resetPassword(token: string, password: string): Promise<void> {
         const stored = await this.emailTokenService.consume(
             token,
@@ -261,7 +233,6 @@ export class AuthService {
         await this.mailService.sendVerification(email, token);
     }
 
-    /** Выдаёт пару токенов и публичный профиль. */
     public async buildResponse(user: User, meta: SessionMeta): Promise<AuthResponse> {
         const pair = await this.tokenService.issuePair(user, meta);
 

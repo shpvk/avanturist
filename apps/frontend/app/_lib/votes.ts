@@ -2,10 +2,6 @@ import type { Vote, VoteTally } from "./types";
 
 const voteIndex: Record<Vote, 0 | 1 | 2> = { positive: 0, situational: 1, negative: 2 };
 
-/**
- * Stored tallies are already percentages. Adding the reader's own vote re-normalises
- * them so the three shares keep summing to 100 instead of overflowing past it.
- */
 export function votePercentages(votes: VoteTally, vote: Vote | null): VoteTally {
   if (!vote) return votes;
 

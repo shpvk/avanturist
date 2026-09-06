@@ -29,7 +29,6 @@ export function VerifyEmail() {
     verifyEmail(token)
       .then((profile) => {
         if (cancelled) return;
-        // Профиль в шапке обновляем только если это та же вкладка и тот же аккаунт.
         if (user?.id === profile.id) setUser(profile);
         setStatus("done");
       })
@@ -42,8 +41,6 @@ export function VerifyEmail() {
     return () => {
       cancelled = true;
     };
-    // Профиль намеренно не в зависимостях: токен нужно погасить ровно один раз.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   if (status === "pending") {

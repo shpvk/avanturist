@@ -7,7 +7,6 @@ import {PrismaPg} from "@prisma/adapter-pg";
 export class PrismaService
     extends PrismaClient
     implements OnModuleInit, OnModuleDestroy {
-
     constructor(config: ConfigService) {
         const adapter = new PrismaPg({
             connectionString: config.getOrThrow<string>('POSTGRES_URI'),

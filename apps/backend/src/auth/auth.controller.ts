@@ -77,13 +77,8 @@ export class AuthController {
     @UseGuards(GoogleOAuthGuard)
     @Get('google')
     public googleRedirect(): void {
-        // Редирект на согласие Google выполняет passport внутри guard'а.
     }
 
-    /**
-     * Токены не уходят в query редиректа: фронт получает одноразовый код
-     * и меняет его на пару через `POST /auth/google/exchange`.
-     */
     @Public()
     @UseGuards(GoogleCallbackGuard)
     @Get('google/callback')
@@ -104,7 +99,6 @@ export class AuthController {
         res.redirect(`${redirect}?code=${encodeURIComponent(code)}`);
     }
 
-    // Код приходит только телом: в query он осел бы в логах прокси и в Referer.
     @Public()
     @Throttle({ medium: { ttl: 60_000, limit: 10 } })
     @HttpCode(HttpStatus.OK)

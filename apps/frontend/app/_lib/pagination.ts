@@ -1,13 +1,7 @@
-/** A page number, or the gap that stands for the pages the pager does not list. */
 export type PageItem = number | "gap";
 
-/** How many numbers stay around the current page before the pager collapses the rest. */
 const windowSize = 3;
 
-/**
- * The pager's buttons: the first page, a sliding window around the current one, the last
- * page, and a gap wherever numbers were left out. Short feeds list every page instead.
- */
 export function pageItems(page: number, pageCount: number): PageItem[] {
   if (pageCount <= windowSize + 2) {
     return Array.from({ length: pageCount }, (_, index) => index + 1);

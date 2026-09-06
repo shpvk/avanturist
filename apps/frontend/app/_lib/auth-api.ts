@@ -29,7 +29,6 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** Сообщение бэкенда полезнее кода: формы показывают его пользователю как есть. */
 async function readError(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { message?: string | string[] };
@@ -54,7 +53,6 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
   return remember(await post<AuthResponse>("/auth/login", payload));
 }
 
-/** Обмен одноразового кода после возврата от Google. */
 export async function exchangeOAuthCode(code: string): Promise<AuthResponse> {
   return remember(await post<AuthResponse>("/auth/google/exchange", { code }));
 }
@@ -86,7 +84,6 @@ export async function logout(): Promise<void> {
   try {
     await post<void>("/auth/logout", { refreshToken });
   } catch {
-    // Сессия локально уже погашена; серверная запись протухнет сама.
   }
 }
 
@@ -100,10 +97,6 @@ export async function logoutEverywhere(): Promise<void> {
 
 let refreshInFlight: Promise<AuthResponse | null> | null = null;
 
-/**
- * Ротация refresh-токена. Параллельные запросы ждут один общий полёт: иначе
- * второй пришёл бы с уже погашенным токеном и убил бы всю семью на сервере.
- */
 export function refreshSession(): Promise<AuthResponse | null> {
   if (refreshInFlight) return refreshInFlight;
 
@@ -123,15 +116,10 @@ export function refreshSession(): Promise<AuthResponse | null> {
   return refreshInFlight;
 }
 
-/** Восстанавливает сессию при загрузке страницы: access-токена в памяти ещё нет. */
 export async function restoreSession(): Promise<AuthResponse | null> {
   return getRefreshToken() ? refreshSession() : null;
 }
 
-/**
- * Запрос с access-токеном. На 401 один раз обновляет пару и повторяет запрос —
- * дальше уже честная ошибка авторизации.
- */
 export async function authorizedFetch(
   path: string,
   init: RequestInit = {},
@@ -165,7 +153,6 @@ export async function fetchProfile(): Promise<AuthProfile | null> {
   return (await response.json()) as AuthProfile;
 }
 
-/** Ссылка на согласие Google; бэкенд вернёт пользователя на `/auth/callback`. */
 export function googleSignInUrl(): string {
   return `${apiBaseUrl}/auth/google`;
 }

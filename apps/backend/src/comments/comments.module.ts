@@ -8,7 +8,6 @@ import {
 } from './comments.controller';
 
 @Module({
-    // UserModule нужен NotMutedGuard'у: мут читается из базы, а не из токена.
     imports: [PrismaModule, UserModule],
     controllers: [BuildCommentsController, CommentsController],
     providers: [CommentsService],

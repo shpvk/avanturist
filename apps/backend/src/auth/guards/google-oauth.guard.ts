@@ -9,14 +9,6 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { TokenService } from '../token.service';
 
-/**
- * Вход через Google включается только при заполненных ключах:
- * без них маршрут честно отвечает 503, а не падает пятисоткой из passport.
- *
- * Заодно здесь выдаётся одноразовый `state`. Cookie и сессий в проекте нет,
- * поэтому passport хранить его негде — метка живёт в Redis, а проверяет её
- * `GoogleCallbackGuard`.
- */
 @Injectable()
 export class GoogleOAuthGuard extends AuthGuard('google') {
     public constructor(
@@ -45,11 +37,6 @@ export class GoogleOAuthGuard extends AuthGuard('google') {
     }
 }
 
-/**
- * Возврат от Google. Без проверки `state` атакующий может начать вход сам,
- * а ссылку с готовым `code` подсунуть жертве — её браузер завершит вход
- * в чужой аккаунт (login CSRF).
- */
 @Injectable()
 export class GoogleCallbackGuard extends GoogleOAuthGuard {
     public async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -68,11 +55,9 @@ export class GoogleCallbackGuard extends GoogleOAuthGuard {
             );
         }
 
-        // Для passport-стратегии это всегда Promise<boolean>.
         return (await super.canActivate(context)) as boolean;
     }
 
-    /** На возврате `state` не выдаём: он уже пришёл в запросе и проверен выше. */
     public async getAuthenticateOptions(): Promise<Record<string, unknown>> {
         return {};
     }

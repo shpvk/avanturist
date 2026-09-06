@@ -17,8 +17,6 @@ export default function ProfilePage() {
   const { user, isLoading, logout } = useAuth();
   const [isLeaving, setIsLeaving] = useState(false);
 
-  // Сессия восстанавливается из refresh-токена уже в браузере, поэтому гостя
-  // уводим на вход только после того, как восстановление закончилось.
   useEffect(() => {
     if (!isLoading && !user) router.replace("/login");
   }, [isLoading, user, router]);
@@ -29,7 +27,6 @@ export default function ProfilePage() {
     try {
       await logout();
     } catch {
-      // Сессия могла истечь сама — читатель всё равно хотел выйти.
     }
     router.replace("/");
   };

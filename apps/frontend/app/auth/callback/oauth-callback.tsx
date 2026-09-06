@@ -7,10 +7,6 @@ import { AuthShell } from "../../_components/auth-shell";
 import { useAuth } from "../../_hooks/use-auth";
 import { exchangeOAuthCode } from "../../_lib/auth-api";
 
-/**
- * Бэкенд возвращает сюда одноразовый код вместо самих токенов,
- * чтобы refresh не оседал в истории браузера и в логах.
- */
 export function OAuthCallback() {
   const router = useRouter();
   const params = useSearchParams();

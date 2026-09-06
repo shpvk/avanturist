@@ -28,10 +28,6 @@ export class MailService {
         await this.send(email, 'Сброс пароля в BuildVerdict', html);
     }
 
-    /**
-     * Ошибка отправки не должна ронять регистрацию: письмо всегда можно запросить
-     * повторно, а пользователь уже создан.
-     */
     private async send(to: string, subject: string, html: string): Promise<void> {
         try {
             await this.mailerService.sendMail({ to, subject, html });

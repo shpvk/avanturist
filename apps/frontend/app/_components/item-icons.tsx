@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { itemImage, itemLabel } from "../_lib/build-data";
 
-/** The six carried slots of a build on a feed card; an unused slot stays an empty tile. */
 export function ItemIcons({ items }: { items: Array<string | null> }) {
   return (
     <div className="item-row" aria-label="Предметы сборки">

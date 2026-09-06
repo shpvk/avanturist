@@ -11,14 +11,12 @@ import {
     TokenPair,
 } from './interfaces/auth.interfaces';
 
-/** Разобранный refresh-токен вида `<userId>.<jti>.<secret>`. */
 interface ParsedRefreshToken {
     userId: string;
     jti: string;
     secret: string;
 }
 
-/** Запись активной refresh-сессии в Redis. */
 interface StoredSession {
     tokenHash: string;
     familyId: string;
@@ -49,15 +47,10 @@ export class TokenService {
         );
     }
 
-    /** Логин или регистрация: новая семья токенов, то есть новое устройство. */
     public async issuePair(user: User, meta: SessionMeta): Promise<TokenPair> {
         return this.createPair(user, randomUUID(), meta);
     }
 
-    /**
-     * Ротация: старый токен гасится, взамен выдаётся новый в той же семье.
-     * Повторное использование уже отозванного токена убивает всю семью.
-     */
     public async rotate(
         rawToken: string,
         loadUser: (userId: string) => Promise<User | null>,
@@ -89,10 +82,6 @@ export class TokenService {
         };
     }
 
-    /**
-     * Прячет выданную пару за одноразовым кодом на минуту.
-     * Так после OAuth-редиректа в адресной строке нет самих токенов.
-     */
     public async stashForExchange(pair: TokenPair, userId: string): Promise<string> {
         const code = randomBytes(24).toString('base64url');
 
@@ -106,7 +95,6 @@ export class TokenService {
         return code;
     }
 
-    /** Обменивает одноразовый код на пару токенов, код при этом сгорает. */
     public async claimExchange(
         code: string,
     ): Promise<TokenPair & { userId: string }> {
@@ -120,10 +108,6 @@ export class TokenService {
         return JSON.parse(raw) as TokenPair & { userId: string };
     }
 
-    /**
-     * Одноразовый `state` для OAuth-редиректа. Без него чужой ответ Google
-     * можно подсунуть жертве по ссылке и залогинить её в аккаунт атакующего.
-     */
     public async issueOAuthState(): Promise<string> {
         const state = randomBytes(24).toString('base64url');
 
@@ -132,7 +116,6 @@ export class TokenService {
         return state;
     }
 
-    /** Проверяет и сразу гасит `state`: повторно тот же ответ не пройдёт. */
     public async claimOAuthState(state: string | undefined): Promise<boolean> {
         if (!state) {
             return false;
@@ -145,7 +128,6 @@ export class TokenService {
         return claimed !== null;
     }
 
-    /** Выход с текущего устройства. */
     public async revoke(rawToken: string): Promise<void> {
         let parsed: ParsedRefreshToken;
 
@@ -164,7 +146,6 @@ export class TokenService {
         await this.dropSession(parsed.userId, parsed.jti, session.familyId);
     }
 
-    /** Выход со всех устройств: используется при смене пароля и по кнопке в профиле. */
     public async revokeAllForUser(userId: string): Promise<void> {
         const client = this.redisService.client;
         const userKey = this.userKey(userId);
@@ -186,12 +167,6 @@ export class TokenService {
         await client.del(...keys, userKey);
     }
 
-    /**
-     * Access-токен самодостаточен, поэтому «выйти со всех устройств» и смена
-     * пароля сами по себе гасят только refresh: украденный access жил бы до
-     * конца своего TTL. Метка в Redis закрывает это окно и живёт ровно столько,
-     * сколько может прожить выпущенный до неё access-токен.
-     */
     public async isAccessRevoked(
         userId: string,
         issuedAt?: number,
@@ -204,7 +179,6 @@ export class TokenService {
             return false;
         }
 
-        // Токена без `iat` быть не должно; если он всё же пришёл — не доверяем.
         return !issuedAt || issuedAt < Number(raw);
     }
 
@@ -259,10 +233,6 @@ export class TokenService {
         };
     }
 
-    /**
-     * Активной сессии нет. Если сохранился маркер использованного токена,
-     * значит кто-то предъявил уже отозванный refresh — гасим всю семью.
-     */
     private async handleMissingSession(parsed: ParsedRefreshToken): Promise<void> {
         const client = this.redisService.client;
         const used = await client.get(this.usedKey(parsed.userId, parsed.jti));
@@ -284,7 +254,6 @@ export class TokenService {
         await this.revokeFamily(parsed.userId, familyId);
     }
 
-    /** Гасит активную сессию и оставляет маркер, по которому ловится переиспользование. */
     private async consumeSession(
         parsed: ParsedRefreshToken,
         familyId: string,
@@ -324,7 +293,6 @@ export class TokenService {
             .exec();
     }
 
-    /** Отзывает все токены одной цепочки ротации. */
     private async revokeFamily(userId: string, familyId: string): Promise<void> {
         const client = this.redisService.client;
         const familyKey = this.familyKey(familyId);
@@ -358,7 +326,6 @@ export class TokenService {
         const session = JSON.parse(raw) as StoredSession;
 
         if (session.tokenHash !== this.hash(parsed.secret)) {
-            // Подобранный секрет при существующем jti — считаем это компрометацией семьи.
             await this.revokeFamily(parsed.userId, session.familyId);
 
             return null;

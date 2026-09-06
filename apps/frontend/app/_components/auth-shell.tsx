@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-/** Общая рамка страниц входа: карточка по центру и ссылка домой. */
 export function AuthShell({
   title,
   subtitle,

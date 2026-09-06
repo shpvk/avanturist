@@ -9,12 +9,6 @@ const roleLabels: Record<RoleClass, string> = {
   support: "Саппорт",
 };
 
-/**
- * The lane each hero is usually played in. The API's catalog (apps/backend/src/heroes) comes
- * from OpenDota, which tags heroes by what they do — "Carry", "Nuker", "Durable" — and never
- * by lane, so the lane itself is curated here. Heroes plenty of teams play in two positions
- * are filed under the more common one; the badge is a hint, not a rule.
- */
 const lanesByRole: Record<RoleClass, string[]> = {
   carry: [
     "alchemist", "antimage", "arc_warden", "bloodseeker", "chaos_knight", "clinkz", "drow_ranger", "faceless_void",
@@ -47,10 +41,6 @@ const heroLanes = new Map<string, RoleClass>(
   Object.entries(lanesByRole).flatMap(([lane, heroes]) => heroes.map((hero) => [hero, lane as RoleClass] as const)),
 );
 
-/**
- * A hero the map has not caught up with yet — one straight out of a patch — falls back to
- * OpenDota's own tags, which list the hero's most significant role first.
- */
 const lanesByTag: Record<string, RoleClass> = {
   Carry: "carry",
   Nuker: "mid",
