@@ -99,13 +99,30 @@ export function mapHeroes(heroes: ApiHero[]): HeroOption[] {
   return heroes.map((hero) => ({ id: hero.id, hero: hero.name, heroImage: hero.image, ...heroRole(hero.id, hero.roles) }));
 }
 
+/**
+ * Срок мута читается вместе со временем: разница между «до вечера» и «до
+ * завтра» для автора существеннее, чем календарная дата.
+ */
+export function formatMuteDeadline(until: string | null): string {
+  if (!until) return "бессрочно";
+
+  const deadline = new Date(until);
+  const time = `${String(deadline.getHours()).padStart(2, "0")}:${String(deadline.getMinutes()).padStart(2, "0")}`;
+
+  return `до ${deadline.getDate()} ${monthsGenitive[deadline.getMonth()]}, ${time}`;
+}
+
 export function mapComment(comment: ApiComment, now = new Date()): BuildComment {
   return {
     id: comment.id,
     author: comment.author,
+    authorId: comment.authorId,
     avatar: authorAvatar(comment.author),
     date: formatCommentDate(new Date(comment.createdAt), now),
     text: comment.text,
+    hidden: comment.isDeleted ?? false,
+    authorMuted: comment.authorMuted ?? false,
+    authorMutedUntil: comment.authorMutedUntil ?? null,
   };
 }
 

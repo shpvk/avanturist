@@ -6,6 +6,7 @@ import { InventoryPanel } from "./inventory-panel";
 import HeroModelViewer from "../_hero-model/hero-model-viewer";
 import { heroSlug, voteOptions } from "../_lib/build-data";
 import { votePercentages } from "../_lib/votes";
+import type { BuildThread } from "../_hooks/use-build-thread";
 import type { Build, Vote } from "../_lib/types";
 
 type RandomBuildViewProps = {
@@ -13,23 +14,13 @@ type RandomBuildViewProps = {
   vote: Vote | null;
   /** A vote still being saved: counted into the bar until the API answers with its own tally. */
   pendingVote: Vote | null;
-  draft: string;
+  /** Обсуждение под билдом целиком: черновик, состояние композера, модерация. */
+  thread: BuildThread;
   onVote: (vote: Vote) => void;
   onNext: () => void;
-  onDraftChange: (value: string) => void;
-  onAddComment: (text: string) => void;
 };
 
-export function RandomBuildView({
-  build,
-  vote,
-  pendingVote,
-  draft,
-  onVote,
-  onNext,
-  onDraftChange,
-  onAddComment,
-}: RandomBuildViewProps) {
+export function RandomBuildView({ build, vote, pendingVote, thread, onVote, onNext }: RandomBuildViewProps) {
   const displayedVotes = useMemo(() => votePercentages(build.votes, pendingVote), [build.votes, pendingVote]);
   const slug = heroSlug(build.heroImage);
 
@@ -74,9 +65,12 @@ export function RandomBuildView({
         <BuildComments
           buildId={build.id}
           comments={build.comments}
-          draft={draft}
-          onDraftChange={onDraftChange}
-          onSubmit={onAddComment}
+          draft={thread.draft}
+          composer={thread.composer}
+          moderation={thread.moderation}
+          error={thread.error}
+          onDraftChange={thread.setDraft}
+          onSubmit={thread.addComment}
         />
       </div>
     </main>

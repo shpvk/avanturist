@@ -16,7 +16,7 @@ const maxTitleLength = 80;
 type AddBuildDialogProps = {
   heroes: HeroOption[];
   onClose: () => void;
-  onSubmit: (payload: Omit<CreateBuildPayload, "author">) => Promise<void>;
+  onSubmit: (payload: CreateBuildPayload) => Promise<void>;
 };
 
 export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProps) {

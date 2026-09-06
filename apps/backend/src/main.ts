@@ -1,83 +1,102 @@
 import 'reflect-metadata';
-import { loadRootEnv } from './load-env';
+import { assertRequiredEnv, loadRootEnv } from './load-env';
 import {ConfigService} from "@nestjs/config";
-import cookieParser = require("cookie-parser");
 import {ValidationPipe} from "@nestjs/common";
 import {NestFactory} from "@nestjs/core";
+import type {NextFunction, Request, Response} from "express";
+import type {NestExpressApplication} from "@nestjs/platform-express";
 import {AppModule} from "./app.module";
-
-import IORedis from 'ioredis'
-import session from "express-session";
-import {ms, StringValue} from "./libs/common/utils/ms.util";
-import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
-import {RedisStore} from "connect-redis";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
+import {IS_DEV_ENV} from "./libs/common/utils/is-dev.utils";
+import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
 
+/**
+ * Значение для express `trust proxy`: число — столько хопов доверяем,
+ * `true`/`false` — доверять всем или никому, всё остальное — список адресов.
+ */
+function trustProxyValue(raw: string): boolean | number | string {
+  if (/^\d+$/.test(raw)) {
+    return Number(raw);
+  }
 
+  if (raw === 'true' || raw === 'false') {
+    return parseBoolean(raw);
+  }
+
+  return raw;
+}
 
 async function bootstrap(): Promise<void> {
 
+  loadRootEnv();
+  assertRequiredEnv();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-    // Every controller answers under /api; the docs move aside to keep that prefix free.
-    app.setGlobalPrefix('api');
+  const config = app.get(ConfigService);
 
+  // Заголовок выдаёт стек приложения и ничего не даёт клиенту.
+  app.disable('x-powered-by');
+
+  // За реверс-прокси req.ip без этого равен адресу прокси: throttler считает
+  // всех клиентов одним ведром, а Turnstile получает чужой remoteip.
+  const trustProxy = config.get<string>('TRUST_PROXY')?.trim();
+
+  if (trustProxy) {
+    app.set('trust proxy', trustProxyValue(trustProxy));
+  }
+
+  // Swagger — карта всего API: в прод его отдавать не надо.
+  const swaggerEnabled = parseBoolean(
+      config.get<string>('SWAGGER_ENABLED') ?? String(IS_DEV_ENV),
+  );
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    // В ответах API нет ссылок наружу, а в query бывают одноразовые коды.
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+
+    if (!IS_DEV_ENV) {
+      res.setHeader(
+          'Strict-Transport-Security',
+          'max-age=31536000; includeSubDomains',
+      );
+    }
+
+    // JSON-ответам не нужен ни один источник; страницу Swagger это сломало бы.
+    if (!swaggerEnabled || !req.path.startsWith('/api')) {
+      res.setHeader(
+          'Content-Security-Policy',
+          "default-src 'none'; frame-ancestors 'none'",
+      );
+    }
+
+    next();
+  });
+
+  if (swaggerEnabled) {
     const swaggerConfig = new DocumentBuilder()
         .setTitle('BuildVerdict API')
         .setDescription('API documentation')
         .setVersion('1.0')
+        .addBearerAuth()
         .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
 
-    SwaggerModule.setup('docs', app, document);
-
-  const config = app.get(ConfigService);
-  const redis = new IORedis(config.getOrThrow<string>('REDIS_URI'));
-
-  app.use(cookieParser(config.getOrThrow<string>('COOKIES_SECRET')));
+    SwaggerModule.setup('api', app, document);
+  }
 
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
+    whitelist: true,
   }));
 
-  app.use(
-      session({
-        secret: config.getOrThrow<string>('SESSION_SECRET'),
-        name: config.getOrThrow<string>('SESSION_NAME'),
-        resave: true,
-        saveUninitialized: false,
-        cookie: {
-          domain: config.getOrThrow<string>('SESSION_DOMAIN'),
-          maxAge: ms(config.getOrThrow<StringValue>('SESSION_MAX_AGE')),
-          httpOnly: parseBoolean(
-              config.getOrThrow<string>('SESSION_HTTP_ONLY')
-          ),
-          secure: parseBoolean(
-              config.getOrThrow<string>('SESSION_SECURE')
-          ),
-          sameSite: 'lax'
-        },
-          store: new RedisStore({
-              client: redis,
-              prefix: config.getOrThrow('SESSION_FOLDER')
-          }),
-      })
-  )
-
   app.enableCors({
-    // ALLOWED_ORIGIN takes a comma-separated list: the dev server does not always land
-    // on the same port as the one the deployment uses.
-    origin: config
-        .getOrThrow<string>('ALLOWED_ORIGIN')
-        .split(',')
-        .map((origin) => origin.trim())
-        .filter(Boolean),
-    credentials: true,
-    exposedHeaders: ['set-cookie'],
+    origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
   })
-
 
   await app.listen(config.getOrThrow<number>('APPLICATION_PORT'));
 }

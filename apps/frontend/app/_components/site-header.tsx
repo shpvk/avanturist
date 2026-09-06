@@ -1,16 +1,20 @@
+"use client";
+
 import Link from "next/link";
-import type { AuthUser, Theme, View } from "../_lib/types";
+import { useAuth } from "../_hooks/use-auth";
+import type { Theme, View } from "../_lib/types";
 
 type SiteHeaderProps = {
   view: View;
   theme: Theme;
-  user: AuthUser | null;
   onViewChange: (view: View) => void;
   onThemeToggle: () => void;
   onAddBuild: () => void;
 };
 
-export function SiteHeader({ view, theme, user, onViewChange, onThemeToggle, onAddBuild }: SiteHeaderProps) {
+export function SiteHeader({ view, theme, onViewChange, onThemeToggle, onAddBuild }: SiteHeaderProps) {
+  const { user } = useAuth();
+
   return (
     <header className="topbar">
       <div className="topbar-inner">
@@ -31,9 +35,9 @@ export function SiteHeader({ view, theme, user, onViewChange, onThemeToggle, onA
         </button>
         <div className="header-actions">
           {/* Signed in or not, the icon goes to /profile — the profile page sends guests on to /login. */}
-          <Link className="profile-button" href="/profile" aria-label={user ? `Профиль: ${user.name}` : "Профиль"} title={user ? user.name : "Профиль"}>
+          <Link className="profile-button" href="/profile" aria-label={user ? `Профиль: ${user.displayName}` : "Профиль"} title={user ? user.displayName : "Профиль"}>
             {user
-              ? <span className="account-avatar" aria-hidden="true">{user.name.slice(0, 1).toUpperCase()}</span>
+              ? <span className="account-avatar" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</span>
               : <span className="person-icon" aria-hidden="true" />}
           </Link>
         </div>

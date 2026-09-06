@@ -25,7 +25,7 @@ async function renderWith(handler) {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
     const url = typeof input === "string" ? input : input.url;
-    if (url.includes("/api/")) return handler(url);
+    if (url.includes("/heroes") || url.includes("/builds")) return handler(url);
     return realFetch(input, init);
   };
 

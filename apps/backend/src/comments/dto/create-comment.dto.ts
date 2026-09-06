@@ -1,11 +1,8 @@
 import { IsString, Length } from 'class-validator';
 
+/** Автора сервер берёт из access-токена: комментировать может только вошедший. */
 export class CreateCommentDto {
     @IsString()
-    @Length(2, 40)
-    author!: string;
-
-    @IsString()
-    @Length(1, 2000)
+    @Length(1, 500)
     text!: string;
 }

@@ -5,7 +5,6 @@ import test from "node:test";
 // be exercised straight from source, without a bundler in the way.
 import { commentsLabel, reputationValue } from "../app/_lib/format.ts";
 import { votePercentages } from "../app/_lib/votes.ts";
-import { chatGPTSignInPath, chatGPTSignOutPath, safeRelativeReturnPath } from "../app/_lib/auth-paths.ts";
 import { createId } from "../app/_lib/id.ts";
 import { filterItems } from "../app/_lib/item-filter.ts";
 import { heroRole } from "../app/_lib/hero-roles.ts";
@@ -57,21 +56,6 @@ test("pageItems keeps the first, last and current pages of a long feed", () => {
   assert.deepEqual(pageItems(1, 12), [1, 2, 3, "gap", 12]);
   assert.deepEqual(pageItems(6, 12), [1, "gap", 5, 6, 7, "gap", 12]);
   assert.deepEqual(pageItems(12, 12), [1, "gap", 10, 11, 12]);
-});
-
-test("safeRelativeReturnPath refuses anything that leaves the site", () => {
-  assert.equal(safeRelativeReturnPath("/builds?sort=new"), "/builds?sort=new");
-  assert.equal(safeRelativeReturnPath("https://evil.example/"), "/");
-  assert.equal(safeRelativeReturnPath("//evil.example/"), "/");
-  assert.equal(safeRelativeReturnPath("builds"), "/");
-  assert.equal(safeRelativeReturnPath("/signin-with-chatgpt"), "/");
-  assert.equal(safeRelativeReturnPath("/callback"), "/");
-});
-
-test("auth links encode the return path", () => {
-  assert.equal(chatGPTSignInPath("/"), "/signin-with-chatgpt?return_to=%2F");
-  assert.equal(chatGPTSignOutPath(), "/signout-with-chatgpt?return_to=%2F");
-  assert.equal(chatGPTSignInPath("https://evil.example"), "/signin-with-chatgpt?return_to=%2F");
 });
 
 test("createId never repeats itself", () => {

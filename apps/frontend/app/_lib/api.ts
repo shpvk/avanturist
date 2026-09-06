@@ -1,37 +1,21 @@
+import { apiBaseUrl, ApiError } from "./api-base";
+import { authorizedFetch } from "./auth-api";
 import type {
-  ApiAccount,
   ApiBuild,
   ApiComment,
   ApiHero,
+  ApiMute,
   CreateBuildPayload,
   CreateCommentPayload,
   CreateVotePayload,
-  LoginPayload,
-  RegisterPayload,
+  MutePayload,
 } from "./api-types";
 
-/**
- * Base URL of the Nest API (`apps/backend`, global prefix `/api`). Override with
- * VITE_API_URL; the default matches APPLICATION_PORT from the repository .env.
- */
-const configuredApiUrl = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_API_URL;
-
-export const apiBaseUrl: string = configuredApiUrl ?? "http://localhost:4000/api";
+export { apiBaseUrl, ApiError } from "./api-base";
 
 /** The page must render even when the API is asleep, so server reads give up quickly. */
 const serverTimeoutMs = 2500;
 const mutationTimeoutMs = 8000;
-
-/** A response the API actually rejected — as opposed to it being unreachable. */
-export class ApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-  }
-}
 
 async function request<T>(path: string, init: RequestInit & { timeoutMs?: number } = {}): Promise<T> {
   const { timeoutMs = mutationTimeoutMs, ...requestInit } = init;
@@ -68,8 +52,15 @@ export function fetchBuilds(timeoutMs = serverTimeoutMs): Promise<ApiBuild[]> {
   return request<ApiBuild[]>("/builds", { timeoutMs });
 }
 
-export function createBuild(payload: CreateBuildPayload): Promise<ApiBuild> {
-  return request<ApiBuild>("/builds", { method: "POST", body: JSON.stringify(payload) });
+/** Публикация билда доступна только вошедшему пользователю с подтверждённой почтой. */
+export async function createBuild(payload: CreateBuildPayload): Promise<ApiBuild> {
+  const response = await authorizedFetch("/builds", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new ApiError(response.status, `POST /builds → ${response.status}`);
+  return (await response.json()) as ApiBuild;
 }
 
 /** The API answers a vote with the whole build, tallies included. */
@@ -77,29 +68,92 @@ export function createVote(buildId: string, payload: CreateVotePayload): Promise
   return request<ApiBuild>(`/builds/${buildId}/votes`, { method: "POST", body: JSON.stringify(payload) });
 }
 
-export function createComment(buildId: string, payload: CreateCommentPayload): Promise<ApiComment> {
-  return request<ApiComment>(`/builds/${buildId}/comments`, { method: "POST", body: JSON.stringify(payload) });
+/**
+ * Отказ в комментарии. Мут отличается от неподтверждённой почты не текстом, а
+ * полем `mute`: интерфейс показывает автору срок, а не общее «нельзя».
+ */
+export class CommentRejectedError extends ApiError {
+  readonly mute: { until: string | null; reason: string | null } | null;
+
+  constructor(status: number, message: string, mute: { until: string | null; reason: string | null } | null) {
+    super(status, message);
+    this.name = "CommentRejectedError";
+    this.mute = mute;
+  }
+}
+
+type CommentErrorBody = { message?: string | string[]; mutedUntil?: string | null; muteReason?: string | null };
+
+async function commentRejection(response: Response): Promise<CommentRejectedError> {
+  let body: CommentErrorBody = {};
+  try {
+    body = (await response.json()) as CommentErrorBody;
+  } catch {
+    // Пустое или не-JSON тело: остаётся только код ответа.
+  }
+
+  const message = Array.isArray(body.message) ? body.message[0] : body.message;
+  // Мут сервер помечает наличием срока — даже пустого, если он бессрочный.
+  const muted = "mutedUntil" in body;
+
+  return new CommentRejectedError(
+    response.status,
+    message ?? `POST comment → ${response.status}`,
+    muted ? { until: body.mutedUntil ?? null, reason: body.muteReason ?? null } : null,
+  );
 }
 
 /**
- * Auth rides on a session cookie, so every one of these calls has to carry credentials;
- * the API allows this origin explicitly (ALLOWED_ORIGIN on the backend).
+ * Ветка комментариев отдельным запросом. Администратору сервер добавляет
+ * скрытые комментарии и мут их авторов, поэтому запрос идёт с токеном.
  */
-const authInit: RequestInit = { credentials: "include" };
+export async function fetchComments(buildId: string): Promise<ApiComment[]> {
+  const response = await authorizedFetch(`/builds/${buildId}/comments`);
 
-export function login(payload: LoginPayload): Promise<ApiAccount> {
-  return request<ApiAccount>("/auth/login", { ...authInit, method: "POST", body: JSON.stringify(payload) });
+  if (!response.ok) throw new ApiError(response.status, `GET /builds/${buildId}/comments → ${response.status}`);
+  return (await response.json()) as ApiComment[];
 }
 
-export function register(payload: RegisterPayload): Promise<ApiAccount> {
-  return request<ApiAccount>("/auth/register", { ...authInit, method: "POST", body: JSON.stringify(payload) });
+export async function createComment(buildId: string, payload: CreateCommentPayload): Promise<ApiComment> {
+  const response = await authorizedFetch(`/builds/${buildId}/comments`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw await commentRejection(response);
+  return (await response.json()) as ApiComment;
 }
 
-/** The account behind the session cookie; ApiError 401 means nobody is signed in. */
-export function fetchAccount(timeoutMs = serverTimeoutMs): Promise<ApiAccount> {
-  return request<ApiAccount>("/auth/me", { ...authInit, timeoutMs });
+/** Скрывает комментарий; ответ — тот же комментарий с пометкой модерации. */
+export async function hideComment(commentId: string): Promise<ApiComment> {
+  return moderate(`/comments/${commentId}`, "DELETE");
 }
 
-export function logout(): Promise<void> {
-  return request<void>("/auth/logout", { ...authInit, method: "POST" });
+export async function restoreComment(commentId: string): Promise<ApiComment> {
+  return moderate(`/comments/${commentId}/restore`, "POST");
+}
+
+async function moderate(path: string, method: "POST" | "DELETE"): Promise<ApiComment> {
+  const response = await authorizedFetch(path, { method });
+
+  if (!response.ok) throw new ApiError(response.status, `${method} ${path} → ${response.status}`);
+  return (await response.json()) as ApiComment;
+}
+
+/** Мут закрывает автору только комментарии. Без `minutes` — бессрочно. */
+export async function muteUser(userId: string, payload: MutePayload): Promise<ApiMute> {
+  const response = await authorizedFetch(`/users/${userId}/mute`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new ApiError(response.status, `POST /users/${userId}/mute → ${response.status}`);
+  return (await response.json()) as ApiMute;
+}
+
+export async function unmuteUser(userId: string): Promise<ApiMute> {
+  const response = await authorizedFetch(`/users/${userId}/mute`, { method: "DELETE" });
+
+  if (!response.ok) throw new ApiError(response.status, `DELETE /users/${userId}/mute → ${response.status}`);
+  return (await response.json()) as ApiMute;
 }
