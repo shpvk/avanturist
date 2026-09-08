@@ -25,6 +25,7 @@ export interface PublicBuild {
     items: string[];
     author: string;
     authorId: string;
+    authorPicture: string | null;
     createdAt: string;
     votes: VoteTally;
     commentCount: number;
@@ -47,7 +48,7 @@ const buildSelect = {
     positiveVotes: true,
     situationalVotes: true,
     negativeVotes: true,
-    author: { select: { id: true, displayName: true } },
+    author: { select: { id: true, displayName: true, picture: true } },
     _count: { select: { comments: { where: { deletedAt: null } } } },
 } as const;
 
@@ -71,7 +72,7 @@ export class BuildsService {
                 where,
                 orderBy:
                     query.sort === 'popular'
-                        ? [{ positiveVotes: 'desc' }, { createdAt: 'desc' }]
+                        ? [{ votes: { _count: 'desc' } }, { createdAt: 'desc' }]
                         : [{ createdAt: 'desc' }],
                 skip,
                 take: query.pageSize,
@@ -165,6 +166,11 @@ export class BuildsService {
 
     private feedWhere(query: FeedQueryDto): Prisma.BuildWhereInput {
         const filters: Prisma.BuildWhereInput[] = [];
+
+        if (query.author) {
+            filters.push({ userId: query.author });
+        }
+
         const hero = query.hero?.trim();
 
         if (hero && hero !== 'all') {
@@ -212,6 +218,7 @@ export class BuildsService {
             items: this.parseItems(build.items),
             author: build.author.displayName,
             authorId: build.author.id,
+            authorPicture: build.author.picture,
             createdAt: build.createdAt.toISOString(),
             votes: {
                 positive: build.positiveVotes,

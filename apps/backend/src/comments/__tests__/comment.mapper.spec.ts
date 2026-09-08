@@ -15,6 +15,7 @@ function row(overrides: Partial<CommentRow> = {}): CommentRow {
         author: {
             id: 'user-1',
             displayName: 'SilentStep',
+            picture: null,
             mutedAt: null,
             mutedUntil: null,
         },
@@ -30,6 +31,7 @@ describe('toPublicComment', () => {
                 author: {
                     id: 'user-1',
                     displayName: 'SilentStep',
+                    picture: null,
                     mutedAt: now,
                     mutedUntil: null,
                 },
@@ -42,6 +44,7 @@ describe('toPublicComment', () => {
             buildId: 'build-1',
             author: 'SilentStep',
             authorId: 'user-1',
+            authorPicture: null,
             text: 'Каю на антимаге не воспринимал всерьёз',
             createdAt: '2026-09-01T10:00:00.000Z',
         });
@@ -63,6 +66,7 @@ describe('toPublicComment', () => {
                 author: {
                     id: 'user-1',
                     displayName: 'SilentStep',
+                    picture: null,
                     mutedAt: new Date('2026-09-01T10:00:00.000Z'),
                     mutedUntil: null,
                 },
@@ -80,6 +84,7 @@ describe('toPublicComment', () => {
                 author: {
                     id: 'user-1',
                     displayName: 'SilentStep',
+                    picture: null,
                     mutedAt: new Date('2026-09-01T10:00:00.000Z'),
                     mutedUntil: new Date('2026-09-02T11:00:00.000Z'),
                 },
@@ -97,6 +102,7 @@ describe('toPublicComment', () => {
                 author: {
                     id: 'user-1',
                     displayName: 'SilentStep',
+                    picture: null,
                     mutedAt: new Date('2026-09-02T11:00:00.000Z'),
                     mutedUntil: new Date('2026-09-03T11:00:00.000Z'),
                 },

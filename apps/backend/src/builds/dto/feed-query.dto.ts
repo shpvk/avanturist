@@ -4,6 +4,7 @@ import {
     IsInt,
     IsOptional,
     IsString,
+    IsUUID,
     Max,
     MaxLength,
     Min,
@@ -36,6 +37,10 @@ export class FeedQueryDto {
     @IsString()
     @MaxLength(60, { message: 'hero must be at most 60 characters long.' })
     hero?: string;
+
+    @IsOptional()
+    @IsUUID(undefined, { message: 'author must be a user id.' })
+    author?: string;
 
     @IsOptional()
     @IsIn(['new', 'popular'], { message: 'sort must be "new" or "popular".' })

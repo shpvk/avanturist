@@ -5,6 +5,7 @@ export interface PublicComment {
     buildId: string;
     author: string;
     authorId: string;
+    authorPicture: string | null;
     text: string;
     createdAt: string;
     isDeleted?: boolean;
@@ -22,6 +23,7 @@ export interface CommentRow {
     author: {
         id: string;
         displayName: string;
+        picture: string | null;
         mutedAt: Date | null;
         mutedUntil: Date | null;
     };
@@ -37,6 +39,7 @@ export const commentSelect = {
         select: {
             id: true,
             displayName: true,
+            picture: true,
             mutedAt: true,
             mutedUntil: true,
         },
@@ -52,6 +55,7 @@ export function toPublicComment(
         buildId: comment.buildId,
         author: comment.author.displayName,
         authorId: comment.author.id,
+        authorPicture: comment.author.picture,
         text: comment.text,
         createdAt: comment.createdAt.toISOString(),
     };

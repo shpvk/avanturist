@@ -6,6 +6,7 @@ import {NestFactory} from "@nestjs/core";
 import type {NextFunction, Request, Response} from "express";
 import type {NestExpressApplication} from "@nestjs/platform-express";
 import {AppModule} from "./app.module";
+import {AvatarStorageService} from "./user/avatar-storage.service";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 import {IS_DEV_ENV} from "./libs/common/utils/is-dev.utils";
 import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
@@ -46,7 +47,10 @@ async function bootstrap(): Promise<void> {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    res.setHeader(
+        'Cross-Origin-Resource-Policy',
+        req.path.startsWith('/uploads/') ? 'cross-origin' : 'same-site',
+    );
 
     if (!IS_DEV_ENV) {
       res.setHeader(
@@ -86,6 +90,13 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
   })
+
+  app.useStaticAssets(app.get(AvatarStorageService).root, {
+    prefix: '/uploads/avatars',
+    maxAge: '7d',
+    index: false,
+    dotfiles: 'deny',
+  });
 
   await app.listen(config.getOrThrow<number>('APPLICATION_PORT'));
 }
