@@ -19,6 +19,8 @@ GEMINI.md
 PRODUCT.md
 project overview.md
 docs/auth-plan.md
+docs/mail-delivery.md
+docs/landing-motion-plan.md
 
 # Environment variables and local secrets
 .env
@@ -38,6 +40,9 @@ coverage/
 # Frontend build tooling source (not generated output)
 !apps/frontend/build/
 !apps/frontend/build/**
+
+# Uploaded user files
+uploads/
 
 # Caches and temporary files
 .cache/
