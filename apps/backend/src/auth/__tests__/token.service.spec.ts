@@ -199,22 +199,6 @@ describe('TokenService', () => {
         );
     });
 
-    it('обменивает одноразовый код на пару ровно один раз', async () => {
-        const { service } = createService();
-
-        const pair = await service.issuePair(user, {});
-        const code = await service.stashForExchange(pair, user.id);
-
-        const claimed = await service.claimExchange(code);
-
-        expect(claimed.refreshToken).toBe(pair.refreshToken);
-        expect(claimed.userId).toBe(user.id);
-
-        await expect(service.claimExchange(code)).rejects.toBeInstanceOf(
-            UnauthorizedException,
-        );
-    });
-
     it('logout-all гасит и уже выпущенные access-токены', async () => {
         const { service } = createService();
 
@@ -241,16 +225,5 @@ describe('TokenService', () => {
         expect(
             await service.isAccessRevoked('user-2', Math.floor(Date.now() / 1000) - 5),
         ).toBe(false);
-    });
-
-    it('принимает oauth-state один раз и не принимает чужой', async () => {
-        const { service } = createService();
-
-        const state = await service.issueOAuthState();
-
-        expect(await service.claimOAuthState(state)).toBe(true);
-        expect(await service.claimOAuthState(state)).toBe(false);
-        expect(await service.claimOAuthState('подделка')).toBe(false);
-        expect(await service.claimOAuthState(undefined)).toBe(false);
     });
 });

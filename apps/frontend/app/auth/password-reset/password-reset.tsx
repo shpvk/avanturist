@@ -29,7 +29,7 @@ function RequestStep() {
       await requestPasswordReset(email);
       setIsSent(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось отправить письмо.");
+      setError(cause instanceof Error ? cause.message : "Could not send the message.");
     } finally {
       setIsSubmitting(false);
     }
@@ -38,30 +38,30 @@ function RequestStep() {
   if (isSent) {
     return (
       <AuthShell
-        title="Проверьте почту"
-        subtitle="Если такой адрес зарегистрирован, письмо со ссылкой уже отправлено."
+        title="Check your email"
+        subtitle="If that address is registered, a link is already on its way."
       >
-        <Link className="auth-submit" href="/login">Ко входу</Link>
+        <Link className="auth-submit" href="/login">Go to login</Link>
       </AuthShell>
     );
   }
 
   return (
     <AuthShell
-      title="Сброс пароля"
-      subtitle="Пришлём ссылку для смены пароля."
-      footer={<Link href="/login">Вернуться ко входу</Link>}
+      title="Reset your password"
+      subtitle="We will send you a link to set a new one."
+      footer={<Link href="/login">Back to login</Link>}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label className="auth-field" htmlFor="reset-email">
-          <span className="auth-label">Почта</span>
+          <span className="auth-label">Email</span>
           <span className="auth-input-wrap">
             <input
               id="reset-email"
               type="email"
               value={email}
               autoComplete="email"
-              placeholder="Почта"
+              placeholder="Email"
               required
               onChange={(event) => setEmail(event.target.value)}
             />
@@ -71,7 +71,7 @@ function RequestStep() {
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
         <button className="auth-submit" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Отправляем…" : "Отправить ссылку"}
+          {isSubmitting ? "Sending…" : "Send the link"}
         </button>
       </form>
     </AuthShell>
@@ -94,25 +94,25 @@ function ConfirmStep({ token }: { token: string }) {
       await confirmPasswordReset(token, password, passwordRepeat);
       router.push("/login");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось сменить пароль.");
+      setError(cause instanceof Error ? cause.message : "Could not change the password.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <AuthShell title="Новый пароль" subtitle="После смены пароля все сессии будут завершены.">
+    <AuthShell title="New password" subtitle="Changing it will end every active session.">
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <PasswordField
           id="reset-password"
-          label="Новый пароль"
+          label="New password"
           value={password}
           autoComplete="new-password"
           onChange={setPassword}
         />
         <PasswordField
           id="reset-password-repeat"
-          label="Пароль ещё раз"
+          label="Repeat the password"
           value={passwordRepeat}
           autoComplete="new-password"
           onChange={setPasswordRepeat}
@@ -121,7 +121,7 @@ function ConfirmStep({ token }: { token: string }) {
         {error ? <p className="auth-error" role="alert">{error}</p> : null}
 
         <button className="auth-submit" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Сохраняем…" : "Сохранить пароль"}
+          {isSubmitting ? "Saving…" : "Save password"}
         </button>
       </form>
     </AuthShell>

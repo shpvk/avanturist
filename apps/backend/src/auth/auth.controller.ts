@@ -4,15 +4,14 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Patch,
     Post,
     Req,
-    Res,
     UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
 import { RegisterDto } from './dto/register.dto';
@@ -21,15 +20,12 @@ import { RefreshDto } from './dto/refresh.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { EmailRequestDto } from './dto/email-request.dto';
 import { PasswordResetDto } from './dto/password-reset.dto';
-import { ExchangeCodeDto } from './dto/exchange-code.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { TurnstileGuard } from './guards/turnstile.guard';
-import {
-    GoogleCallbackGuard,
-    GoogleOAuthGuard,
-} from './guards/google-oauth.guard';
-import { GoogleProfile } from './strategies/google.strategy';
 import { SessionMeta } from './interfaces/auth.interfaces';
 
 @ApiTags('auth')
@@ -38,7 +34,6 @@ export class AuthController {
     public constructor(
         private readonly authService: AuthService,
         private readonly userService: UserService,
-        private readonly configService: ConfigService,
     ) {}
 
     @Public()
@@ -71,40 +66,6 @@ export class AuthController {
     @Post('logout')
     public async logout(@Body() dto: RefreshDto): Promise<void> {
         await this.authService.logout(dto.refreshToken);
-    }
-
-    @Public()
-    @UseGuards(GoogleOAuthGuard)
-    @Get('google')
-    public googleRedirect(): void {
-    }
-
-    @Public()
-    @UseGuards(GoogleCallbackGuard)
-    @Get('google/callback')
-    public async googleCallback(
-        @Req() req: Request,
-        @Res() res: Response,
-    ): Promise<void> {
-        const profile = req.user as GoogleProfile;
-        const response = await this.authService.loginWithGoogle(
-            profile,
-            this.meta(req),
-        );
-        const code = await this.authService.stashForExchange(response);
-        const redirect = this.configService.getOrThrow<string>(
-            'GOOGLE_SUCCESS_REDIRECT',
-        );
-
-        res.redirect(`${redirect}?code=${encodeURIComponent(code)}`);
-    }
-
-    @Public()
-    @Throttle({ medium: { ttl: 60_000, limit: 10 } })
-    @HttpCode(HttpStatus.OK)
-    @Post('google/exchange')
-    public async googleExchange(@Body() dto: ExchangeCodeDto) {
-        return this.authService.exchangeCode(dto.code);
     }
 
     @Public()
@@ -154,6 +115,40 @@ export class AuthController {
         const user = await this.userService.findById(userId);
 
         return this.authService.publicUser(user);
+    }
+
+    @ApiBearerAuth()
+    @Throttle({ medium: { ttl: 60_000, limit: 10 } })
+    @Patch('me')
+    public async updateProfile(
+        @CurrentUser('id') userId: string,
+        @Body() dto: UpdateProfileDto,
+    ) {
+        return this.authService.updateProfile(userId, dto);
+    }
+
+    @ApiBearerAuth()
+    @Throttle({ medium: { ttl: 60_000, limit: 5 } })
+    @HttpCode(HttpStatus.OK)
+    @Post('me/password')
+    public async changePassword(
+        @CurrentUser('id') userId: string,
+        @Body() dto: ChangePasswordDto,
+        @Req() req: Request,
+    ) {
+        return this.authService.changePassword(userId, dto, this.meta(req));
+    }
+
+    @ApiBearerAuth()
+    @Throttle({ medium: { ttl: 60 * 60_000, limit: 5 } })
+    @HttpCode(HttpStatus.OK)
+    @Post('me/email')
+    public async changeEmail(
+        @CurrentUser('id') userId: string,
+        @Body() dto: ChangeEmailDto,
+        @Req() req: Request,
+    ) {
+        return this.authService.changeEmail(userId, dto, this.meta(req));
     }
 
     private meta(req: Request): SessionMeta {

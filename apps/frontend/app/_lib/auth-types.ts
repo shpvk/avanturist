@@ -19,6 +19,8 @@ export type AuthTokens = {
 
 export type AuthResponse = AuthTokens & { user: AuthProfile };
 
+export type RegisterResponse = AuthResponse & { verificationEmailSent: boolean };
+
 export type RegisterPayload = {
   name: string;
   email: string;
@@ -32,3 +34,16 @@ export type LoginPayload = {
   password: string;
   turnstileToken?: string;
 };
+
+export type ChangePasswordPayload = {
+  currentPassword: string;
+  password: string;
+  passwordRepeat: string;
+};
+
+export type ChangeEmailPayload = {
+  email: string;
+  currentPassword: string;
+};
+
+export type EmailChangeResponse = AuthResponse & { verificationEmailSent: boolean };

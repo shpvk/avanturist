@@ -2,6 +2,7 @@ import {
     BadRequestException,
     ConflictException,
     Injectable,
+    ServiceUnavailableException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { verify } from 'argon2';
@@ -10,11 +11,14 @@ import { UserService } from '../user/user.service';
 import { TokenService } from './token.service';
 import { EmailTokenService } from './email-token.service';
 import { MailService } from '../mail/mail.service';
+import { MailDeliveryError } from '../mail/mail-delivery.error';
 import { AuthMethod, TokenType } from '../generated/prisma/enums';
 import { User } from '../generated/prisma/client';
-import { GoogleProfile } from './strategies/google.strategy';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ChangeEmailDto } from './dto/change-email.dto';
 import { SessionMeta, TokenPair } from './interfaces/auth.interfaces';
 
 const DUMMY_PASSWORD_HASH =
@@ -35,6 +39,14 @@ export interface AuthResponse extends TokenPair {
     };
 }
 
+export interface RegisterResponse extends AuthResponse {
+    verificationEmailSent: boolean;
+}
+
+export interface EmailChangeResponse extends AuthResponse {
+    verificationEmailSent: boolean;
+}
+
 @Injectable()
 export class AuthService {
     public constructor(
@@ -44,7 +56,7 @@ export class AuthService {
         private readonly mailService: MailService,
     ) {}
 
-    public async register(dto: RegisterDto, meta: SessionMeta): Promise<AuthResponse> {
+    public async register(dto: RegisterDto, meta: SessionMeta): Promise<RegisterResponse> {
         const existing = await this.userService.findByEmail(dto.email);
 
         if (existing) {
@@ -59,9 +71,10 @@ export class AuthService {
             isVerified: false,
         });
 
-        await this.sendVerification(user.email);
+        const verificationEmailSent = await this.trySendVerification(user.email);
+        const response = await this.buildResponse(user, meta);
 
-        return this.buildResponse(user, meta);
+        return { ...response, verificationEmailSent };
     }
 
     public async login(dto: LoginDto, meta: SessionMeta): Promise<AuthResponse> {
@@ -97,67 +110,6 @@ export class AuthService {
         await this.tokenService.revokeAllForUser(userId);
     }
 
-    public async loginWithGoogle(
-        profile: GoogleProfile,
-        meta: SessionMeta,
-    ): Promise<AuthResponse> {
-        const linked = await this.userService.findByProviderAccount(
-            'google',
-            profile.providerAccountId,
-        );
-
-        if (linked) {
-            return this.buildResponse(linked, meta);
-        }
-
-        if (!profile.emailVerified) {
-            throw new UnauthorizedException('Google account email is not verified.');
-        }
-
-        const existing = await this.userService.findByEmail(profile.email);
-
-        const user =
-            existing ??
-            (await this.userService.create({
-                email: profile.email,
-                password: null,
-                displayName: profile.displayName,
-                picture: profile.picture,
-                method: AuthMethod.GOOGLE,
-                isVerified: true,
-            }));
-
-        await this.userService.linkAccount({
-            userId: user.id,
-            provider: 'google',
-            providerAccountId: profile.providerAccountId,
-        });
-
-        const verified = user.isVerified
-            ? user
-            : await this.userService.markVerified(user.id);
-
-        return this.buildResponse(verified, meta);
-    }
-
-    public async stashForExchange(response: AuthResponse): Promise<string> {
-        return this.tokenService.stashForExchange(
-            {
-                accessToken: response.accessToken,
-                refreshToken: response.refreshToken,
-                expiresIn: response.expiresIn,
-            },
-            response.user.id,
-        );
-    }
-
-    public async exchangeCode(code: string): Promise<AuthResponse> {
-        const { userId, ...pair } = await this.tokenService.claimExchange(code);
-        const user = await this.userService.findById(userId);
-
-        return { ...pair, user: this.publicUser(user) };
-    }
-
     public async verifyEmail(token: string): Promise<AuthResponse['user']> {
         const stored = await this.emailTokenService.consume(
             token,
@@ -184,8 +136,14 @@ export class AuthService {
     public async resendVerification(email: string): Promise<void> {
         const user = await this.userService.findByEmail(email);
 
-        if (user && !user.isVerified) {
+        if (!user || user.isVerified) {
+            return;
+        }
+
+        try {
             await this.sendVerification(user.email);
+        } catch (error) {
+            throw this.deliveryFailure(error);
         }
     }
 
@@ -201,7 +159,11 @@ export class AuthService {
             TokenType.PASSWORD_RESET,
         );
 
-        await this.mailService.sendPasswordReset(user.email, token);
+        try {
+            await this.mailService.sendPasswordReset(user.email, token);
+        } catch (error) {
+            throw this.deliveryFailure(error);
+        }
     }
 
     public async resetPassword(token: string, password: string): Promise<void> {
@@ -224,6 +186,95 @@ export class AuthService {
         await this.tokenService.revokeAllForUser(user.id);
     }
 
+    public async updateProfile(
+        userId: string,
+        dto: UpdateProfileDto,
+    ): Promise<AuthResponse['user']> {
+        const user = await this.userService.findById(userId);
+        const displayName = dto.displayName.trim();
+
+        if (displayName.length < 2) {
+            throw new BadRequestException(
+                'Ник — минимум 2 символа.',
+            );
+        }
+
+        if (displayName === user.displayName) {
+            return this.publicUser(user);
+        }
+
+        return this.publicUser(
+            await this.userService.updateDisplayName(userId, displayName),
+        );
+    }
+
+    public async changePassword(
+        userId: string,
+        dto: ChangePasswordDto,
+        meta: SessionMeta,
+    ): Promise<AuthResponse> {
+        const user = await this.userService.findById(userId);
+
+        await this.assertPassword(user, dto.currentPassword);
+
+        if (dto.password === dto.currentPassword) {
+            throw new BadRequestException(
+                'Новый пароль должен отличаться от текущего.',
+            );
+        }
+
+        const updated = await this.userService.updatePassword(
+            userId,
+            dto.password,
+        );
+
+        await this.tokenService.revokeAllForUser(userId);
+
+        return this.buildResponse(updated, meta);
+    }
+
+    public async changeEmail(
+        userId: string,
+        dto: ChangeEmailDto,
+        meta: SessionMeta,
+    ): Promise<EmailChangeResponse> {
+        const user = await this.userService.findById(userId);
+
+        await this.assertPassword(user, dto.currentPassword);
+
+        const email = dto.email.toLowerCase();
+
+        if (email === user.email) {
+            throw new BadRequestException('Эта почта уже указана в аккаунте.');
+        }
+
+        if (await this.userService.findByEmail(email)) {
+            throw new ConflictException('Эта почта уже занята.');
+        }
+
+        const updated = await this.userService.updateEmail(userId, email);
+        const verificationEmailSent = await this.trySendVerification(
+            updated.email,
+        );
+
+        await this.tokenService.revokeAllForUser(userId);
+
+        const response = await this.buildResponse(updated, meta);
+
+        return { ...response, verificationEmailSent };
+    }
+
+    private async assertPassword(user: User, password: string): Promise<void> {
+        const matches = await verify(
+            user.password ?? DUMMY_PASSWORD_HASH,
+            password,
+        );
+
+        if (!user.password || !matches) {
+            throw new UnauthorizedException('Текущий пароль неверный.');
+        }
+    }
+
     private async sendVerification(email: string): Promise<void> {
         const token = await this.emailTokenService.issue(
             email,
@@ -231,6 +282,30 @@ export class AuthService {
         );
 
         await this.mailService.sendVerification(email, token);
+    }
+
+    private async trySendVerification(email: string): Promise<boolean> {
+        try {
+            await this.sendVerification(email);
+
+            return true;
+        } catch (error) {
+            if (error instanceof MailDeliveryError) {
+                return false;
+            }
+
+            throw error;
+        }
+    }
+
+    private deliveryFailure(error: unknown): unknown {
+        if (error instanceof MailDeliveryError) {
+            return new ServiceUnavailableException(
+                'Could not send the email right now. Try again in a few minutes.',
+            );
+        }
+
+        return error;
     }
 
     public async buildResponse(user: User, meta: SessionMeta): Promise<AuthResponse> {

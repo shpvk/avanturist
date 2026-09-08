@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell } from "../_components/auth-shell";
-import { GoogleButton } from "../_components/google-button";
 import { PasswordField } from "../_components/password-field";
 import { useAuth } from "../_hooks/use-auth";
 
@@ -24,8 +23,16 @@ export function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      await register({ name, email, password, passwordRepeat });
-      router.push("/?registered=1");
+      const { verificationEmailSent } = await register({
+        name,
+        email,
+        password,
+        passwordRepeat,
+      });
+
+      router.push(
+        `/auth/check-email${verificationEmailSent ? "" : "?sent=0"}`,
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not create the account.");
     } finally {
@@ -36,16 +43,12 @@ export function RegisterForm() {
   return (
     <AuthShell
       title="Create account"
-      subtitle="Your builds and comments unlock once you confirm your email."
       footer={
         <>
           Already have an account? <Link href="/login">Log in</Link>
         </>
       }
     >
-      <GoogleButton label="Sign up with Google" />
-      <div className="auth-divider"><span>or</span></div>
-
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label className="auth-field" htmlFor="register-name">
           <span className="auth-label">Name</span>
