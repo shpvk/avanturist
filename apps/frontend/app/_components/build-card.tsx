@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { DeleteBuildButton } from "./delete-build-button";
 import { ItemIcons } from "./item-icons";
 import { commentsLabel } from "../_lib/format";
@@ -27,22 +28,47 @@ function CommentIcon() {
   );
 }
 
-export function BuildCard({ build, index, onOpen, canDelete = false, onDelete }: { build: Build; index: number; onOpen: () => void; canDelete?: boolean; onDelete?: () => Promise<void> }) {
+type BuildCardProps = {
+  build: Build;
+  index: number;
+  onOpen?: () => void;
+  canDelete?: boolean;
+  onDelete?: () => Promise<void>;
+};
+
+export function BuildCard({ build, index, onOpen, canDelete = false, onDelete }: BuildCardProps) {
   const approval = build.votes[0];
   const carried = splitInventory(build.items).main;
+  const buildHref = `/app?build=${build.id}`;
+  const openLabel = `Open the build “${build.title}”`;
+  const artwork = (
+    <Image className="build-card-art" src={build.heroImage} alt="" width={512} height={288} loading={index === 0 ? "eager" : "lazy"} unoptimized />
+  );
 
   return (
     <article className="build-card">
-      <Image className="build-card-art" src={build.heroImage} alt="" width={512} height={288} loading={index === 0 ? "eager" : "lazy"} unoptimized />
+      {onOpen ? (
+        <button className="build-card-art-button" type="button" tabIndex={-1} aria-hidden="true" onClick={onOpen}>
+          {artwork}
+        </button>
+      ) : (
+        <Link className="build-card-art-link" href={buildHref} tabIndex={-1} aria-hidden="true">
+          {artwork}
+        </Link>
+      )}
       <div className="build-card-body">
         <span className="build-card-hero">{build.hero}</span>
         <h2 className="build-card-title">
-          <button type="button" onClick={onOpen} aria-label={`Открыть билд «${build.title}»`}>{build.title}</button>
+          {onOpen ? (
+            <button type="button" onClick={onOpen} aria-label={openLabel}>{build.title}</button>
+          ) : (
+            <Link href={buildHref} aria-label={openLabel}>{build.title}</Link>
+          )}
         </h2>
         <div className="build-card-items"><ItemIcons items={carried} /></div>
         <div className="build-card-footer">
           <span className="build-card-author">{build.author}</span>
-          <span className={`build-card-approval ${approvalTone(approval)}`} aria-label={`За ${approval}%`}>
+          <span className={`build-card-approval ${approvalTone(approval)}`} aria-label={`Likes ${approval}%`}>
             <span aria-hidden="true">{approval}%</span><ThumbIcon />
           </span>
           <span className="build-card-comments" aria-label={commentsLabel(build.commentCount)}>

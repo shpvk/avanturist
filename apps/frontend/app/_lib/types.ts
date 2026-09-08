@@ -1,6 +1,5 @@
 export type View = "random" | "all";
 export type Vote = "positive" | "situational" | "negative";
-export type Theme = "dark" | "light";
 export type FeedSort = "new" | "popular";
 export type RoleClass = "carry" | "offlane" | "support" | "mid";
 
@@ -39,8 +38,6 @@ export type Build = {
   authorId?: string;
   avatar: string;
   reputation: string;
-  verdict: string;
-  verdictType: string;
   votes: VoteTally;
   commentCount: number;
   comments: BuildComment[];

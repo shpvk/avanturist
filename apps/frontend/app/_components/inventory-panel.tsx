@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { itemImage, itemLabel } from "../_lib/build-data";
-import { splitInventory } from "../_lib/inventory";
+import { blessingId, shardId, splitInventory } from "../_lib/inventory";
 
-const slotPlaceholder: Record<string, string> = { scepter: "ultimate_scepter", shard: "aghanims_shard" };
+const slotPlaceholder: Record<string, string> = { scepter: blessingId, shard: shardId };
 
 function InventorySlot({ item, kind }: { item: string | null; kind: string }) {
   if (!item) {
@@ -25,7 +25,7 @@ export function InventoryPanel({ items }: { items: string[] }) {
   const { main, backpack, scepter, shard, neutral } = splitInventory(items);
 
   return (
-    <div className="dota-inventory-grid" role="group" aria-label="Предметы сборки">
+    <div className="dota-inventory-grid" role="group" aria-label="Build items">
       <div className="inventory-column aghanims">
         <InventorySlot item={scepter} kind="scepter" />
         <InventorySlot item={shard} kind="shard" />

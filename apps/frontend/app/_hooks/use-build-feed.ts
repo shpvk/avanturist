@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiError, createBuild, deleteBuild, fetchBuilds, fetchRandomBuild } from "../_lib/api";
+import { ApiError, createBuild, fetchBuilds, fetchRandomBuild } from "../_lib/api";
 import { mapBuild, mapFeed } from "../_lib/api-mapping";
 import { createLocalBuild } from "../_lib/build-data";
 import type { CreateBuildPayload } from "../_lib/api-types";
+import { pageSize } from "../_lib/pagination";
 import type { Build, FeedFilters, HeroOption } from "../_lib/types";
-
-export const pageSize = 12;
 
 const searchDebounceMs = 300;
 
@@ -30,22 +29,22 @@ export type BuildFeed = {
     canGoBack: boolean;
     selectBuild: (id: string) => void;
     addBuild: (payload: CreateBuildPayload) => Promise<Build>;
-    removeBuild: (id: string) => Promise<void>;
 };
 
 type BuildFeedInput = {
     initialBuilds: Build[];
     initialTotal: number;
+    initialBuild?: Build;
     heroes: HeroOption[];
 };
 
-export function useBuildFeed({ initialBuilds, initialTotal, heroes }: BuildFeedInput): BuildFeed {
+export function useBuildFeed({ initialBuilds, initialTotal, initialBuild, heroes }: BuildFeedInput): BuildFeed {
     const [builds, setBuilds] = useState<Build[]>(initialBuilds);
     const [total, setTotal] = useState(initialTotal);
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState<FeedFilters>(defaultFeedFilters);
     const [isLoading, setIsLoading] = useState(false);
-    const [currentBuild, setCurrentBuild] = useState<Build | undefined>(initialBuilds[0]);
+    const [currentBuild, setCurrentBuild] = useState<Build | undefined>(initialBuild ?? initialBuilds[0]);
     const [history, setHistory] = useState<Build[]>([]);
 
     const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
@@ -150,17 +149,6 @@ export function useBuildFeed({ initialBuilds, initialTotal, heroes }: BuildFeedI
         return build;
     }, [heroes]);
 
-    const removeBuild = useCallback(async (id: string) => {
-        await deleteBuild(id);
-
-        setBuilds((current) => current.filter((build) => build.id !== id));
-        setTotal((current) => Math.max(current - 1, 0));
-        setHistory((past) => past.filter((build) => build.id !== id));
-        setCurrentBuild((current) =>
-            current?.id === id ? builds.find((build) => build.id !== id) : current,
-        );
-    }, [builds]);
-
     return {
         builds,
         total,
@@ -178,6 +166,5 @@ export function useBuildFeed({ initialBuilds, initialTotal, heroes }: BuildFeedI
         canGoBack: history.length > 0,
         selectBuild,
         addBuild,
-        removeBuild,
     };
 }

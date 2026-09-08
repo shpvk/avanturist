@@ -1,7 +1,7 @@
-import { fetchBuilds, fetchHeroes } from "./api";
-import { mapFeed, mapHeroes } from "./api-mapping";
+import { fetchBuild, fetchBuilds, fetchHeroes } from "./api";
+import { mapBuild, mapFeed, mapHeroes } from "./api-mapping";
 import { demoBuilds, demoHeroes } from "./build-data";
-import { pageSize } from "../_hooks/use-build-feed";
+import { pageSize } from "./pagination";
 import type { Build, HeroOption } from "./types";
 
 export type FeedSnapshot = {
@@ -11,6 +11,14 @@ export type FeedSnapshot = {
   source: "api" | "demo";
 };
 
+export async function loadBuild(buildId: string, heroes: HeroOption[]): Promise<Build | undefined> {
+  try {
+    return mapBuild(await fetchBuild(buildId), { heroes });
+  } catch {
+    return undefined;
+  }
+}
+
 export async function loadFeed(): Promise<FeedSnapshot> {
   try {
     const [apiHeroes, feed] = await Promise.all([fetchHeroes(), fetchBuilds({ page: 1, pageSize })]);
@@ -18,5 +26,17 @@ export async function loadFeed(): Promise<FeedSnapshot> {
     return { builds: mapFeed(feed.items, heroes), total: feed.total, heroes, source: "api" };
   } catch {
     return { builds: demoBuilds, total: demoBuilds.length, heroes: demoHeroes, source: "demo" };
+  }
+}
+
+export async function loadLandingBuilds(limit = 6): Promise<Build[]> {
+  try {
+    const [apiHeroes, feed] = await Promise.all([
+      fetchHeroes(),
+      fetchBuilds({ page: 1, pageSize: limit, sort: "popular" }),
+    ]);
+    return mapFeed(feed.items, mapHeroes(apiHeroes));
+  } catch {
+    return [];
   }
 }

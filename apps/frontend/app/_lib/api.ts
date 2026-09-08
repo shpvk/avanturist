@@ -6,6 +6,7 @@ import type {
   ApiFeedPage,
   ApiHero,
   ApiMute,
+  ApiUserProfile,
   CreateBuildPayload,
   CreateCommentPayload,
   CreateVotePayload,
@@ -27,8 +28,9 @@ async function request<T>(path: string, init: RequestInit & { timeoutMs?: number
   });
 
   if (!response.ok) throw new ApiError(response.status, await errorMessage(response, path, requestInit.method));
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  const text = await response.text();
+
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 async function errorMessage(response: Response, path: string, method = "GET"): Promise<string> {
@@ -52,6 +54,14 @@ export function fetchBuilds(query: FeedQuery = {}, timeoutMs = serverTimeoutMs):
   const suffix = search.size > 0 ? `?${search}` : "";
 
   return request<ApiFeedPage>(`/builds${suffix}`, { timeoutMs });
+}
+
+export function fetchBuild(buildId: string, timeoutMs = serverTimeoutMs): Promise<ApiBuild> {
+  return request<ApiBuild>(`/builds/${buildId}`, { timeoutMs });
+}
+
+export function fetchUserProfile(userId: string, timeoutMs = serverTimeoutMs): Promise<ApiUserProfile> {
+  return request<ApiUserProfile>(`/users/${userId}`, { timeoutMs });
 }
 
 export function fetchRandomBuild(timeoutMs = serverTimeoutMs): Promise<ApiBuild> {

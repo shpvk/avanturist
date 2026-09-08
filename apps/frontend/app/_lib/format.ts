@@ -2,28 +2,30 @@ export function reputationValue(reputation: string): number {
   return Number(reputation.replaceAll(/\D/g, "")) || 0;
 }
 
-export function plural(count: number, one: string, few: string, many: string): string {
-  const lastTwoDigits = Math.abs(count) % 100;
-  const lastDigit = lastTwoDigits % 10;
-  const isTeen = lastTwoDigits >= 11 && lastTwoDigits <= 14;
-  if (isTeen || lastDigit === 0 || lastDigit >= 5) return many;
-  return lastDigit === 1 ? one : few;
+export function plural(count: number, one: string, many: string): string {
+  return Math.abs(count) === 1 ? one : many;
 }
 
 export function commentsLabel(count: number): string {
-  return `${count} ${plural(count, "комментарий", "комментария", "комментариев")}`;
+  return `${count} ${plural(count, "comment", "comments")}`;
 }
 
 export function formatMinutes(total: number): string {
   if (total % 1_440 === 0) {
     const days = total / 1_440;
-    return `${days} ${plural(days, "день", "дня", "дней")}`;
+    return `${days} ${plural(days, "day", "days")}`;
   }
 
   if (total % 60 === 0) {
     const hours = total / 60;
-    return `${hours} ${plural(hours, "час", "часа", "часов")}`;
+    return `${hours} ${plural(hours, "hour", "hours")}`;
   }
 
-  return `${total} ${plural(total, "минуту", "минуты", "минут")}`;
+  return `${total} ${plural(total, "minute", "minutes")}`;
+}
+
+export function maskEmail(email: string): string {
+  const trimmed = email.trim();
+  if (!trimmed) return "";
+  return `${trimmed[0]}${"*".repeat(8)}`;
 }

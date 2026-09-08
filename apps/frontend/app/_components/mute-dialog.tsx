@@ -10,18 +10,18 @@ const maxMuteMinutes = 525_600;
 const maxReasonLength = 200;
 
 const presets = [
-  { id: "1h", label: "1 час", minutes: 60 },
-  { id: "6h", label: "6 часов", minutes: 360 },
-  { id: "1d", label: "Сутки", minutes: 1_440 },
-  { id: "7d", label: "7 дней", minutes: 10_080 },
-  { id: "30d", label: "30 дней", minutes: 43_200 },
-  { id: "forever", label: "Бессрочно", minutes: null },
+  { id: "1h", label: "1 hour", minutes: 60 },
+  { id: "6h", label: "6 hours", minutes: 360 },
+  { id: "1d", label: "1 day", minutes: 1_440 },
+  { id: "7d", label: "7 days", minutes: 10_080 },
+  { id: "30d", label: "30 days", minutes: 43_200 },
+  { id: "forever", label: "Indefinite", minutes: null },
 ] as const;
 
 const units = [
-  { id: "minutes", label: "минут", factor: 1 },
-  { id: "hours", label: "часов", factor: 60 },
-  { id: "days", label: "дней", factor: 1_440 },
+  { id: "minutes", label: "minutes", factor: 1 },
+  { id: "hours", label: "hours", factor: 60 },
+  { id: "days", label: "days", factor: 1_440 },
 ] as const;
 
 type UnitId = (typeof units)[number]["id"];
@@ -57,7 +57,7 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
 
   const duration = useMemo(() => {
     if (minutes === undefined) return null;
-    return minutes === null ? "бессрочно" : `на ${formatMinutes(minutes)}`;
+    return minutes === null ? "indefinitely" : `for ${formatMinutes(minutes)}`;
   }, [minutes]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -65,7 +65,7 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
     if (isSaving) return;
 
     if (minutes === undefined) {
-      setError(`Срок — целое число от 1 минуты до года (${maxMuteMinutes} минут). Дольше — это «Бессрочно».`);
+      setError(`The duration must be a whole number between 1 minute and a year (${maxMuteMinutes} minutes). Anything longer is “Indefinite”.`);
       return;
     }
 
@@ -77,7 +77,7 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
         reason: reason.trim() || undefined,
       });
     } catch {
-      setError("Не удалось выдать мут. Попробуйте ещё раз.");
+      setError("Could not apply the mute. Please try again.");
       setIsSaving(false);
     }
   };
@@ -95,14 +95,14 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
       >
         <div className="dialog-heading">
           <div>
-            <h2 id="mute-title">Мут для {author}</h2>
-            <p id="mute-description">Закрывает только комментарии. Оценивать билды и публиковать сборки автор сможет.</p>
+            <h2 id="mute-title">Mute {author}</h2>
+            <p id="mute-description">This closes commenting only. The author can still vote on builds and publish their own.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Закрыть форму">×</button>
+          <button type="button" onClick={onClose} aria-label="Close the form">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <fieldset className="mute-durations">
-            <legend>Срок</legend>
+            <legend>Duration</legend>
             <div>
               {presets.map((preset) => (
                 <button
@@ -121,14 +121,14 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
                 aria-pressed={isCustom}
                 onClick={() => { setSelected("custom"); setError(null); }}
               >
-                Другой срок
+                Custom duration
               </button>
             </div>
           </fieldset>
           {isCustom && (
             <div className="mute-custom">
               <label className="form-field">
-                <span>Сколько</span>
+                <span>How long</span>
                 <input
                   name="custom-value"
                   type="number"
@@ -140,7 +140,7 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
                 />
               </label>
               <label className="form-field">
-                <span>Единицы</span>
+                <span>Units</span>
                 <select value={customUnit} onChange={(event) => setCustomUnit(event.target.value as UnitId)}>
                   {units.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}
                 </select>
@@ -148,24 +148,24 @@ export function MuteDialog({ author, onClose, onSubmit }: MuteDialogProps) {
             </div>
           )}
           <label className="form-field">
-            <span>Причина <small>необязательно, её увидит автор</small></span>
+            <span>Reason <small>optional, the author will see it</small></span>
             <input
               name="reason"
               type="text"
               maxLength={maxReasonLength}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Например: оскорбления в ветке"
+              placeholder="For example: insults in the thread"
             />
           </label>
           <p className="mute-preview" aria-live="polite">
-            {duration ? `Комментарии закроются ${duration}.` : "Укажите срок в пределах года или выберите «Бессрочно»."}
+            {duration ? `Commenting will be closed ${duration}.` : "Set a duration within a year or choose “Indefinite”."}
           </p>
           {error && <p className="dialog-error" role="alert">{error}</p>}
           <div className="dialog-actions">
-            <button className="cancel-button" type="button" onClick={onClose}>Отмена</button>
+            <button className="cancel-button" type="button" onClick={onClose}>Cancel</button>
             <button className="submit-build-button" type="submit" disabled={isSaving || minutes === undefined}>
-              {isSaving ? "Выдаём мут…" : "Замутить"}
+              {isSaving ? "Applying mute…" : "Mute"}
             </button>
           </div>
         </form>

@@ -1,0 +1,63 @@
+@layer tokens {
+  :root {
+    --page: #090b08;
+    --surface: #0f1110;
+    --surface-2: #141614;
+    --surface-3: #1c1f1c;
+    --surface-art: #10130f;
+    --stage: #060806;
+
+    --line: #272826;
+    --line-strong: #3a3c39;
+
+    --text: #f2f4f1;
+    --text-soft: #a8ada5;
+    --text-dim: #6f746c;
+
+    --accent: #5df78f;
+    --accent-hover: #7ffaa8;
+    --accent-ink: #071a0e;
+    --accent-text: #5df78f;
+
+    --verdict-positive: #5df78f;
+    --verdict-situational: #f4ae00;
+    --verdict-negative: #ff4e4e;
+
+    --scrim: rgba(3, 5, 3, 0.82);
+    --shadow-card: 0 24px 64px rgba(0, 0, 0, 0.45);
+    --shadow-pop: 0 32px 90px rgba(0, 0, 0, 0.55);
+
+    --r-control: 2px;
+    --r-block: 0;
+    --r-pill: 999px;
+
+    --shell-width: min(calc(100% - 64px), 1472px);
+    --shell-width-wide: min(calc(100% - 112px), 1408px);
+
+    --font-display: var(--font-inter-tight), ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-body: var(--font-display);
+    --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --f-display: clamp(46px, 8vw, 108px);
+    --f-h1: clamp(32px, 4.4vw, 60px);
+    --f-h2: clamp(24px, 2.6vw, 40px);
+    --f-h3: clamp(19px, 1.5vw, 24px);
+    --f-body: 15px;
+    --f-small: 13px;
+    --f-label: 11px;
+
+    --track-display: -0.035em;
+    --track-tight: -0.03em;
+    --track-snug: -0.02em;
+    --track-label: 0.12em;
+
+    --t-instant: 0.12s;
+    --t-fast: 0.16s;
+    --t-slow: 0.32s;
+    --t-scene: 0.9s;
+    --t-epic: 1.6s;
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+  }
+}

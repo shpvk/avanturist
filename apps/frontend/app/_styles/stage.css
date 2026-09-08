@@ -1,0 +1,372 @@
+@layer stage {
+  .dota-stage {
+    color-scheme: dark;
+    --sheet-text: #f4f7f2;
+    --sheet-soft: #c9d1c6;
+    --sheet-dim: #808b7d;
+    --sheet-line: rgba(255, 255, 255, 0.09);
+    --sheet-line-strong: rgba(255, 255, 255, 0.22);
+    --sheet-well: #0a0d09;
+    --sheet-well-empty: rgba(8, 11, 8, 0.9);
+    --sheet-accent: #5df78f;
+    --slot: 92px;
+    --slot-gap: 3px;
+    --backpack-h: calc(var(--slot) * 7 / 15);
+  }
+
+  .random-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(300px, 0.94fr);
+    grid-template-rows: 1fr auto;
+    column-gap: 24px;
+    height: auto;
+    min-height: 620px;
+    overflow: hidden;
+    border: 1px solid var(--sheet-line);
+    border-radius: var(--r-control);
+    background:
+      radial-gradient(46% 54% at 76% 46%, rgba(93, 247, 143, 0.1), transparent 70%),
+      linear-gradient(172deg, #0b0e0a 0%, #070903 58%, #030503 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--shadow-card);
+    color: var(--sheet-text);
+  }
+
+  .dota-build-panel {
+    grid-column: 1;
+    grid-row: 1;
+    display: block;
+    min-width: 0;
+    min-height: 0;
+    padding: 40px 0 20px 44px;
+    overflow: visible;
+    border: 0;
+    background: none;
+  }
+  .dota-panel-header {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: calc(var(--slot) * 0.17);
+  }
+  .dota-player-avatar {
+    width: calc(var(--slot) * 0.89);
+    height: calc(var(--slot) * 0.89);
+    flex: 0 0 calc(var(--slot) * 0.89);
+    display: block;
+    border-radius: 0;
+    object-fit: cover;
+    background: var(--sheet-well);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  }
+  .dota-panel-meta { min-width: 0; margin: 0; display: block; }
+  .dota-player-name {
+    margin: -6px 0 0;
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    min-width: 0;
+  }
+  .dota-player-avatar-link { flex: 0 0 auto; display: block; line-height: 0; }
+  .dota-player-name a { color: inherit; text-decoration: none; }
+  .dota-player-name a:hover,
+  .dota-player-name a:focus-visible { color: var(--sheet-accent); }
+  .dota-player-name strong {
+    overflow: hidden;
+    color: var(--sheet-text);
+    font-family: var(--font-display);
+    font-size: calc(var(--slot) * 0.44);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: var(--track-tight);
+    text-overflow: ellipsis;
+  }
+
+  .dota-hero-identity { display: block; margin-top: calc(var(--slot) * 0.12); }
+  .dota-hero-identity h2 {
+    margin: 0;
+    color: var(--sheet-dim);
+    font-family: var(--font-mono);
+    font-size: var(--f-label);
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+  }
+
+  .dota-build-title {
+    margin: calc(var(--slot) * 0.22) 0 0;
+    padding: 0;
+    border: 0;
+    color: var(--sheet-text);
+    font-family: var(--font-display);
+    font-size: clamp(28px, 2.6vw, 44px);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: var(--track-tight);
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .dota-inventory { margin-top: calc(var(--slot) * 0.32); }
+  .dota-inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    align-items: center;
+    gap: calc(var(--slot) * 0.17);
+  }
+  .inventory-main { display: grid; grid-template-columns: repeat(3, var(--slot)); gap: var(--slot-gap); }
+  .inventory-column {
+    display: grid;
+    gap: var(--slot-gap);
+    margin-bottom: calc(var(--backpack-h) + var(--slot-gap));
+  }
+  .inventory-slot {
+    position: relative;
+    width: var(--slot);
+    aspect-ratio: 11 / 8;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--r-control);
+    background: var(--sheet-well);
+    box-shadow: inset 0 0 0 1px var(--sheet-line), 0 1px 3px rgba(0, 0, 0, 0.6);
+  }
+  .inventory-slot img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .inventory-slot.empty {
+    background: var(--sheet-well-empty);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045);
+  }
+  .inventory-slot.backpack { aspect-ratio: auto; height: var(--backpack-h); }
+  .inventory-slot.backpack.empty {
+    background: rgba(5, 8, 5, 0.92);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  }
+  .inventory-slot.scepter,
+  .inventory-slot.shard { width: calc(var(--slot) * 0.62); }
+  .inventory-slot.neutral { width: calc(var(--slot) * 0.84); }
+  .inventory-slot .slot-placeholder { opacity: 0.16; filter: grayscale(1); }
+
+  .item-row { display: flex; gap: 7px; }
+  .item-row img {
+    width: 48px;
+    height: auto;
+    aspect-ratio: 11 / 8;
+    display: block;
+    border-radius: var(--r-control);
+    object-fit: contain;
+    background: var(--sheet-well);
+    box-shadow: inset 0 0 0 1px var(--sheet-line);
+  }
+
+  .hero-showcase {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1 / 3;
+    min-width: 0;
+    min-height: 620px;
+    overflow: hidden;
+    isolation: isolate;
+    border: 0;
+    background: radial-gradient(
+      46% 40% at 51% 50%,
+      rgba(93, 247, 143, 0.2),
+      rgba(60, 170, 100, 0.07) 55%,
+      transparent 76%
+    );
+  }
+  .hero-showcase::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    right: 22%;
+    bottom: 7%;
+    left: 22%;
+    height: 9%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(93, 247, 143, 0.24), transparent 72%);
+    filter: blur(16px);
+    pointer-events: none;
+  }
+  .hero-viewer, .hero-viewer-stage { position: absolute; inset: 0; }
+  .hero-viewer { overflow: hidden; }
+  .hero-viewer-stage { z-index: 2; }
+  .hero-model {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.7));
+  }
+  .hero-model-canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+  .hero-model-canvas:active { cursor: grabbing; }
+  .hero-model-poster { z-index: 1; pointer-events: none; }
+  .hero-model-loading {
+    position: absolute;
+    z-index: 3;
+    right: 50%;
+    bottom: 22px;
+    translate: 50% 0;
+    padding: 9px 13px;
+    border: 0;
+    border-radius: var(--r-control);
+    background: rgba(8, 12, 8, 0.82);
+    color: var(--sheet-soft);
+    font-family: var(--font-mono);
+    font-size: var(--f-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+  }
+
+  .rating-panel {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0 34px 44px;
+    border: 0;
+    background: none;
+  }
+  .rating-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .rating-button {
+    min-height: 40px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--sheet-line);
+    border-radius: var(--r-control);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--sheet-soft);
+    font-family: var(--font-mono);
+    font-size: var(--f-label);
+    font-weight: 500;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .rating-button:hover {
+    transform: none;
+    border-color: var(--sheet-line-strong);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--sheet-text);
+  }
+  .rating-button.selected {
+    border-color: var(--sheet-line-strong);
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.11);
+    color: var(--sheet-text);
+  }
+  .verdict-dot {
+    width: 5px;
+    height: 5px;
+    flex: 0 0 5px;
+    border-radius: 50%;
+    background: var(--sheet-dim);
+  }
+  .positive .verdict-dot { background: #5df78f; }
+  .situational .verdict-dot { background: #f4ae00; }
+  .negative .verdict-dot { background: #ff4e4e; }
+  .rating-button.selected.positive { border-color: color-mix(in srgb, #5df78f 55%, transparent); }
+  .rating-button.selected.situational { border-color: color-mix(in srgb, #f4ae00 55%, transparent); }
+  .rating-button.selected.negative { border-color: color-mix(in srgb, #ff4e4e 55%, transparent); }
+  .verdict-percentage { color: var(--sheet-dim); font-variant-numeric: tabular-nums; }
+
+  .prev-build-button,
+  .next-build-button {
+    min-height: 40px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--sheet-accent);
+    font-family: var(--font-mono);
+    font-size: var(--f-label);
+    font-weight: 600;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+  }
+  .rating-nav { display: flex; align-items: center; gap: 24px; }
+  .prev-build-button { color: var(--sheet-dim); }
+  .prev-build-button span { display: inline-block; margin-right: 8px; font-size: 16px; }
+  .prev-build-button:not(:disabled):hover { background: none; color: var(--sheet-text); }
+  .next-build-button span { display: inline-block; margin-left: 8px; font-size: 16px; }
+  .next-build-button:hover { background: none; color: var(--sheet-text); }
+
+  .dota-stage.build-inventory-editor {
+    --slot: 56px;
+    padding: 14px;
+    border: 1px solid var(--sheet-line);
+    border-radius: var(--r-control);
+    background: linear-gradient(172deg, #0b0e0a, #040603);
+  }
+  .build-inventory-editor .inventory-slot { cursor: grab; }
+  .build-inventory-editor button.inventory-slot { padding: 0; }
+  .build-inventory-editor .inventory-slot:active { cursor: grabbing; }
+  .build-inventory-editor .inventory-slot.drop-target {
+    box-shadow:
+      inset 0 0 0 2px var(--sheet-accent),
+      0 0 12px color-mix(in srgb, var(--sheet-accent) 45%, transparent);
+  }
+
+  @media (max-width: 1180px) {
+    .dota-stage { --slot: 76px; }
+    .random-card {
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+      column-gap: 16px;
+      min-height: 540px;
+    }
+    .dota-build-panel { padding: 32px 0 16px 30px; }
+    .dota-player-avatar { width: 60px; height: 60px; flex-basis: 60px; }
+    .hero-showcase { min-height: 540px; }
+    .rating-panel { padding: 12px 0 26px 30px; gap: 8px; }
+  }
+
+  @media (max-width: 800px) {
+    .dota-stage { --slot: 68px; }
+    .random-card {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      column-gap: 0;
+      min-height: 0;
+    }
+    .dota-build-panel { grid-column: 1; grid-row: 1; padding: 26px 22px 0; }
+    .dota-panel-header { gap: 14px; }
+    .dota-player-avatar { width: 52px; height: 52px; flex-basis: 52px; }
+    .dota-player-name { margin-top: -3px; }
+    .dota-player-name strong { font-size: clamp(26px, 6vw, 38px); }
+    .dota-build-title { margin-top: 20px; font-size: clamp(24px, 5vw, 32px); }
+    .dota-inventory { margin-top: 22px; }
+    .hero-showcase {
+      grid-column: 1;
+      grid-row: 3;
+      min-height: 360px;
+      height: clamp(360px, 68vw, 470px);
+    }
+    .rating-panel { grid-column: 1; grid-row: 2; padding: 18px 22px 20px; gap: 12px; }
+    .rating-actions { justify-content: space-between; width: 100%; gap: 0; }
+    .rating-button { flex-direction: row; padding: 8px 6px; gap: 6px; }
+    .rating-nav { width: 100%; justify-content: space-between; gap: 12px; }
+  }
+
+  @media (max-width: 520px) {
+    .dota-stage { --slot: 58px; }
+  }
+
+  @media (max-width: 380px) {
+    .dota-stage { --slot: 52px; }
+    .dota-build-panel { padding-inline: 16px; }
+    .rating-panel { padding-inline: 16px; }
+    .rating-button { padding-inline: 4px; gap: 5px; font-size: 10px; letter-spacing: 0.06em; }
+  }
+}

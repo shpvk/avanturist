@@ -20,6 +20,7 @@ export type ApiComment = {
   buildId: string;
   author: string;
   authorId: string;
+  authorPicture?: string | null;
   text: string;
   createdAt: string;
   isDeleted?: boolean;
@@ -35,10 +36,20 @@ export type ApiBuild = {
   items: string[];
   author: string;
   authorId?: string;
+  authorPicture?: string | null;
   createdAt: string;
   votes: ApiVoteTally;
   commentCount: number;
   authorReputation: number;
+};
+
+export type ApiUserProfile = {
+  id: string;
+  displayName: string;
+  picture: string | null;
+  role: "REGULAR" | "ADMIN";
+  createdAt: string;
+  buildCount: number;
 };
 
 export type ApiFeedPage = {
@@ -54,6 +65,7 @@ export type FeedQuery = {
   search?: string;
   hero?: string;
   sort?: "new" | "popular";
+  author?: string;
 };
 
 export type CreateBuildPayload = {

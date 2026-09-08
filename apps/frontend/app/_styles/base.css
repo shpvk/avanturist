@@ -1,0 +1,101 @@
+@layer base {
+  * { box-sizing: border-box; }
+
+  html {
+    color-scheme: dark;
+    overflow-x: clip;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: clip;
+    background: var(--page);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: var(--f-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  button, input, select, textarea { font: inherit; }
+  button, select { cursor: pointer; }
+  button, a { color: inherit; }
+  a { text-decoration: none; }
+  img { max-width: 100%; }
+
+  button {
+    transition:
+      background-color var(--t-fast) var(--ease),
+      border-color var(--t-fast) var(--ease),
+      color var(--t-fast) var(--ease),
+      transform var(--t-fast) var(--ease),
+      opacity var(--t-fast) var(--ease);
+  }
+  button:disabled { cursor: not-allowed; opacity: 0.48; }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  details:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .label {
+    display: block;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: var(--f-label);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

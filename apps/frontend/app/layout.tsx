@@ -1,46 +1,63 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
-import "./home.css";
-import { defaultTheme, themeBootstrapScript } from "./_lib/theme";
+import { Geist_Mono, Inter_Tight } from "next/font/google";
+import { MotionProvider } from "./_motion/motion-provider";
+import "./styles.css";
+
+const interTight = Inter_Tight({
+  variable: "--font-inter-tight",
+  subsets: ["latin", "latin-ext", "cyrillic"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin", "latin-ext"],
+  display: "swap",
+});
+
+const tagline = "Verdicts on the Dota 2 builds that look wrong and might be right.";
 
 export const metadata: Metadata = {
   applicationName: "BuildVerdict",
-  title: {
-    default: "BuildVerdict — оцени билды Dota 2",
-    template: "%s — BuildVerdict",
+  title: "build verdict",
+  description:
+    "A forum for adventurous Dota 2 builds: judge the idea, argue in the comments and publish your own.",
+  keywords: ["Dota 2", "builds", "hero items", "BuildVerdict"],
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
   },
-  description: "Сообщество необычных и экспериментальных билдов Dota 2: оценивай идеи, изучай предметы и делись своими сборками.",
-  keywords: ["Dota 2", "билды", "сборки героев", "BuildVerdict"],
-  icons: { icon: "/favicon.svg" },
   manifest: "/manifest.webmanifest",
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
-    locale: "ru_RU",
+    locale: "en_US",
     siteName: "BuildVerdict",
-    title: "BuildVerdict — вердикт необычным билдам Dota 2",
-    description: "Оценивай экспериментальные сборки героев и находи новые игровые идеи.",
+    title: "BuildVerdict — a verdict on unusual Dota 2 builds",
+    description: tagline,
   },
   twitter: {
     card: "summary_large_image",
-    title: "BuildVerdict — вердикт необычным билдам Dota 2",
-    description: "Оценивай экспериментальные сборки героев и находи новые игровые идеи.",
+    title: "BuildVerdict — a verdict on unusual Dota 2 builds",
+    description: tagline,
   },
 };
 
 export const viewport: Viewport = {
-  colorScheme: "dark light",
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#080b10" },
-    { media: "(prefers-color-scheme: light)", color: "#f4f6f9" },
-  ],
+  colorScheme: "dark",
+  themeColor: "#090b08",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" data-theme={defaultTheme} suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} /></head>
-      <body>{children}</body>
+    <html lang="en" className={`${interTight.variable} ${geistMono.variable}`}>
+      <body>
+        <MotionProvider>{children}</MotionProvider>
+      </body>
     </html>
   );
 }
