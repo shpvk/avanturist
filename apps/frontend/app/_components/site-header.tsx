@@ -1,46 +1,75 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { AccountMenu } from "./account-menu";
 import { useAuth } from "../_hooks/use-auth";
-import type { Theme, View } from "../_lib/types";
+import { VerificationBanner } from "./verification-banner";
+import type { View } from "../_lib/types";
 
 type SiteHeaderProps = {
-  view: View;
-  theme: Theme;
-  onViewChange: (view: View) => void;
-  onThemeToggle: () => void;
-  onAddBuild: () => void;
+  view?: View;
+  onViewChange?: (view: View) => void;
+  onAddBuild?: () => void;
 };
 
-export function SiteHeader({ view, theme, onViewChange, onThemeToggle, onAddBuild }: SiteHeaderProps) {
+export function SiteHeader({ view, onViewChange, onAddBuild }: SiteHeaderProps) {
   const { user } = useAuth();
 
   return (
-    <header className="topbar">
-      <div className="topbar-inner">
-        <button className="wordmark" type="button" onClick={() => onViewChange("random")} aria-label="BuildVerdict — главная">build<span>verdict</span></button>
-        <nav className="header-nav" aria-label="Основные разделы">
-          <button className={view === "all" ? "active" : ""} type="button" aria-label="Все билды" aria-pressed={view === "all"} onClick={() => onViewChange("all")}>Билды</button>
-          {user && <button type="button" onClick={onAddBuild}>Добавить билд</button>}
-        </nav>
-        <button
-          className={`theme-toggle ${theme}`}
-          type="button"
-          onClick={onThemeToggle}
-          aria-label={theme === "dark" ? "Включить светлую тему" : "Включить тёмную тему"}
-          title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-          suppressHydrationWarning
-        >
-          <span className="theme-icon" aria-hidden="true" />
-        </button>
-        <div className="header-actions">
-          <Link className="profile-button" href="/profile" aria-label={user ? `Профиль: ${user.displayName}` : "Профиль"} title={user ? user.displayName : "Профиль"}>
-            {user
-              ? <span className="account-avatar" aria-hidden="true">{user.displayName.slice(0, 1).toUpperCase()}</span>
-              : <span className="person-icon" aria-hidden="true" />}
-          </Link>
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <HeaderControl className="wordmark" href="/app" onClick={onViewChange && (() => onViewChange("random"))} label="BuildVerdict — home">
+            build<span>verdict</span>
+          </HeaderControl>
+          <nav className="header-nav" aria-label="Main sections">
+            <HeaderControl
+              className={`header-nav-item${view === "all" ? " active" : ""}`}
+              href="/app"
+              onClick={onViewChange && (() => onViewChange("all"))}
+              label="All builds"
+              pressed={onViewChange ? view === "all" : undefined}
+            >
+              Builds
+            </HeaderControl>
+            {user && (
+              <HeaderControl className="header-nav-item" href="/app?add=1" onClick={onAddBuild}>
+                Add build
+              </HeaderControl>
+            )}
+          </nav>
+          <div className="header-actions">
+            <AccountMenu />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+      <VerificationBanner />
+    </>
+  );
+}
+
+type HeaderControlProps = {
+  className: string;
+  href: string;
+  onClick?: (() => void) | false;
+  label?: string;
+  pressed?: boolean;
+  children: ReactNode;
+};
+
+function HeaderControl({ className, href, onClick, label, pressed, children }: HeaderControlProps) {
+  if (onClick) {
+    return (
+      <button className={className} type="button" aria-label={label} aria-pressed={pressed} onClick={onClick}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link className={className} href={href} aria-label={label}>
+      {children}
+    </Link>
   );
 }

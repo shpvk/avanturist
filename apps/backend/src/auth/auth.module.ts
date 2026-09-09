@@ -7,7 +7,6 @@ import { AuthController } from './auth.controller';
 import { TokenService } from './token.service';
 import { EmailTokenService } from './email-token.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { UserModule } from '../user/user.module';
 import { StringValue } from '../libs/common/utils/ms.util';
 import { RedisModule } from '../redis/redis.module';
@@ -39,14 +38,6 @@ import { MailModule } from '../mail/mail.module';
         TokenService,
         EmailTokenService,
         JwtStrategy,
-        {
-            provide: GoogleStrategy,
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) =>
-                configService.get<string>('GOOGLE_CLIENT_ID')
-                    ? new GoogleStrategy(configService)
-                    : null,
-        },
     ],
     exports: [AuthService, TokenService],
 })

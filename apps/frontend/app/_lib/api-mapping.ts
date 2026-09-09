@@ -1,12 +1,12 @@
 import { heroRole } from "./hero-roles";
 import { heroImageBase } from "./dota-cdn";
 import type { ApiBuild, ApiComment, ApiHero, ApiVoteTally } from "./api-types";
+import { resolveAvatar } from "./avatars";
 import type { Build, BuildComment, HeroOption, VoteTally } from "./types";
 
-const monthsGenitive = [
-  "января", "февраля", "марта", "апреля", "мая", "июня",
-  "июля", "августа", "сентября", "октября", "ноября", "декабря",
-];
+const dayMonth = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const dayMonthYear = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const clock = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC" });
 
 const defaultAvatar = "/assets/heroes/community-avatar.webp";
 const avatarPool = [
@@ -18,7 +18,6 @@ const avatarPool = [
   "/assets/heroes/spirit_breaker.png",
 ];
 
-const recommendedShare = 60;
 const justNowMs = 60_000;
 
 function hashCode(value: string): number {
@@ -32,24 +31,23 @@ export function authorAvatar(author: string): string {
 }
 
 function isSameDay(first: Date, second: Date): boolean {
-  return first.getFullYear() === second.getFullYear()
-    && first.getMonth() === second.getMonth()
-    && first.getDate() === second.getDate();
+  return first.getUTCFullYear() === second.getUTCFullYear()
+    && first.getUTCMonth() === second.getUTCMonth()
+    && first.getUTCDate() === second.getUTCDate();
 }
 
 export function formatBuildDate(createdAt: Date, now = new Date()): string {
-  if (isSameDay(createdAt, now)) return "сегодня";
-  return `${createdAt.getDate()} ${monthsGenitive[createdAt.getMonth()]} ${createdAt.getFullYear()}`;
+  if (isSameDay(createdAt, now)) return "today";
+  return dayMonthYear.format(createdAt);
 }
 
 export function formatCommentDate(createdAt: Date, now = new Date()): string {
-  if (now.getTime() - createdAt.getTime() < justNowMs) return "только что";
-  return `${createdAt.getDate()} ${monthsGenitive[createdAt.getMonth()]}`;
+  if (now.getTime() - createdAt.getTime() < justNowMs) return "just now";
+  return dayMonth.format(createdAt);
 }
 
 export function isoDay(createdAt: Date): string {
-  const localMidnight = new Date(createdAt.getTime() - createdAt.getTimezoneOffset() * 60_000);
-  return localMidnight.toISOString().slice(0, 10);
+  return createdAt.toISOString().slice(0, 10);
 }
 
 export function tallyVotes(votes: ApiVoteTally): VoteTally {
@@ -58,12 +56,6 @@ export function tallyVotes(votes: ApiVoteTally): VoteTally {
   if (total === 0) return [0, 0, 0];
 
   return counts.map((count) => Math.round((count / total) * 100)) as VoteTally;
-}
-
-export function verdictFor(votes: VoteTally): { verdict: string; verdictType: string } {
-  if (votes[0] + votes[1] + votes[2] === 0) return { verdict: "Нет оценок", verdictType: "neutral" };
-  if (votes[0] >= recommendedShare) return { verdict: "Рекомендуется", verdictType: "recommended" };
-  return { verdict: "Нейтрально", verdictType: "neutral" };
 }
 
 export function formatReputation(value: number): string {
@@ -75,12 +67,10 @@ export function mapHeroes(heroes: ApiHero[]): HeroOption[] {
 }
 
 export function formatMuteDeadline(until: string | null): string {
-  if (!until) return "бессрочно";
+  if (!until) return "indefinitely";
 
   const deadline = new Date(until);
-  const time = `${String(deadline.getHours()).padStart(2, "0")}:${String(deadline.getMinutes()).padStart(2, "0")}`;
-
-  return `до ${deadline.getDate()} ${monthsGenitive[deadline.getMonth()]}, ${time}`;
+  return `until ${dayMonth.format(deadline)}, ${clock.format(deadline)}`;
 }
 
 export function mapComment(comment: ApiComment, now = new Date()): BuildComment {
@@ -88,7 +78,7 @@ export function mapComment(comment: ApiComment, now = new Date()): BuildComment 
     id: comment.id,
     author: comment.author,
     authorId: comment.authorId,
-    avatar: authorAvatar(comment.author),
+    avatar: resolveAvatar(comment.authorPicture, comment.author),
     date: formatCommentDate(new Date(comment.createdAt), now),
     text: comment.text,
     hidden: comment.isDeleted ?? false,
@@ -119,9 +109,8 @@ export function mapBuild(build: ApiBuild, { heroes, reputation = 0, now = new Da
     items: build.items,
     author: build.author,
     authorId: build.authorId,
-    avatar: authorAvatar(build.author),
+    avatar: resolveAvatar(build.authorPicture, build.author),
     reputation: formatReputation(reputation),
-    ...verdictFor(votes),
     votes,
     commentCount: build.commentCount,
     comments: [],

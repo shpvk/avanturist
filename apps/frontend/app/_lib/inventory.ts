@@ -1,4 +1,4 @@
-import { dotaItems } from "./dota-items";
+import { dotaItems } from "./dota-items.ts";
 
 export type Inventory = {
   main: Array<string | null>;
@@ -8,26 +8,38 @@ export type Inventory = {
   neutral: string | null;
 };
 
-const scepterIds = new Set(["ultimate_scepter", "ultimate_scepter_2"]);
-const shardId = "aghanims_shard";
+export type Slots = Array<string | null>;
+
+export const blessingId = "ultimate_scepter_2";
+export const shardId = "aghanims_shard";
 const neutralIds = new Set(dotaItems.filter((item) => item.category === "neutral").map((item) => item.id));
 
 export const mainSlotCount = 6;
 export const backpackSlotCount = 3;
+export const carriedSlotCount = mainSlotCount + backpackSlotCount;
+export const scepterSlotIndex = carriedSlotCount;
+export const shardSlotIndex = carriedSlotCount + 1;
+export const neutralSlotIndex = carriedSlotCount + 2;
+export const slotCount = carriedSlotCount + 3;
 
-export function splitInventory(items: string[]): Inventory {
+function classify(items: string[]) {
   let scepter: string | null = null;
   let shard: string | null = null;
   let neutral: string | null = null;
   const carried: string[] = [];
 
   for (const item of items) {
-    if (!scepter && scepterIds.has(item)) scepter = item;
-    else if (!shard && item === shardId) shard = item;
-    else if (!neutral && neutralIds.has(item)) neutral = item;
+    if (item === blessingId) scepter ??= item;
+    else if (item === shardId) shard ??= item;
+    else if (neutralIds.has(item)) neutral ??= item;
     else carried.push(item);
   }
 
+  return { scepter, shard, neutral, carried };
+}
+
+export function splitInventory(items: string[]): Inventory {
+  const { scepter, shard, neutral, carried } = classify(items);
   const stowed = carried.slice(mainSlotCount);
   const backpackSlots = Math.max(backpackSlotCount, Math.ceil(stowed.length / backpackSlotCount) * backpackSlotCount);
   return {
@@ -39,27 +51,79 @@ export function splitInventory(items: string[]): Inventory {
   };
 }
 
-function carriedOf(inventory: Inventory): string[] {
-  return [...inventory.main, ...inventory.backpack].filter((entry): entry is string => entry !== null);
+export function emptySlots(): Slots {
+  return Array.from({ length: slotCount }, () => null);
 }
 
-export function placeItem(items: string[], item: string, slot: number): string[] {
-  const inventory = splitInventory(items);
-  const carried = carriedOf(inventory).filter((entry) => entry !== item);
-  carried.splice(Math.min(Math.max(slot, 0), carried.length), 0, item);
-
-  const dedicated = [inventory.scepter, inventory.shard, inventory.neutral]
-    .filter((entry): entry is string => entry !== null && entry !== item);
-
-  return [...dedicated, ...carried];
+export function toSlots(items: string[]): Slots {
+  const { scepter, shard, neutral, carried } = classify(items);
+  const slots = emptySlots();
+  carried.slice(0, carriedSlotCount).forEach((item, index) => { slots[index] = item; });
+  slots[scepterSlotIndex] = scepter;
+  slots[shardSlotIndex] = shard;
+  slots[neutralSlotIndex] = neutral;
+  return slots;
 }
 
-export function dropItem(items: string[], item: string): string[] {
-  return items.filter((entry) => entry !== item);
+export function fromSlots(slots: Slots): string[] {
+  return slots.filter((item): item is string => item !== null);
 }
 
-export function inventorySize(items: string[]): number {
-  const inventory = splitInventory(items);
-  return carriedOf(inventory).length
-    + [inventory.scepter, inventory.shard, inventory.neutral].filter(Boolean).length;
+export function dedicatedSlot(item: string): number | null {
+  if (item === blessingId) return scepterSlotIndex;
+  if (item === shardId) return shardSlotIndex;
+  if (neutralIds.has(item)) return neutralSlotIndex;
+  return null;
+}
+
+export function canPlace(item: string, slot: number): boolean {
+  const dedicated = dedicatedSlot(item);
+  return dedicated === null ? slot < carriedSlotCount : slot === dedicated;
+}
+
+function freeCarriedSlot(slots: Slots): number | null {
+  const index = slots.findIndex((item, position) => position < carriedSlotCount && item === null);
+  return index === -1 ? null : index;
+}
+
+export function placeInSlot(slots: Slots, item: string, slot: number, from: number | null): Slots {
+  if (!canPlace(item, slot) || from === slot) return slots;
+
+  const next = [...slots];
+  if (from !== null) next[from] = null;
+
+  const displaced = next[slot];
+  if (displaced !== null) {
+    const spare = from ?? freeCarriedSlot(next);
+    if (spare !== null && canPlace(displaced, spare)) next[spare] = displaced;
+    else if (dedicatedSlot(displaced) !== slot) return slots;
+  }
+
+  next[slot] = item;
+  return next;
+}
+
+function slotForNewItem(slots: Slots, item: string): number | null {
+  const dedicated = dedicatedSlot(item);
+  if (dedicated !== null) return dedicated;
+  return freeCarriedSlot(slots);
+}
+
+export function addItem(slots: Slots, item: string): Slots {
+  const slot = slotForNewItem(slots, item);
+  return slot === null ? slots : placeInSlot(slots, item, slot, null);
+}
+
+export function canAdd(slots: Slots, item: string): boolean {
+  return slotForNewItem(slots, item) !== null;
+}
+
+export function clearSlot(slots: Slots, slot: number): Slots {
+  const next = [...slots];
+  next[slot] = null;
+  return next;
+}
+
+export function carriedSize(slots: Slots): number {
+  return slots.slice(0, carriedSlotCount).filter((item) => item !== null).length;
 }

@@ -31,7 +31,6 @@ model User {
   mutedById String? @map("muted_by_id")
   mutedUsers User[] @relation("UserMute")
 
-  accounts Account[]
   builds   Build[]
   comments Comment[]
   votes    Vote[]
@@ -42,27 +41,6 @@ model User {
 
   @@index([mutedById])
   @@map("users")
-}
-
-model Account {
-  id String @id @default(uuid())
-
-  type              String
-  provider          String
-  providerAccountId String @map("provider_account_id")
-
-  refreshToken String? @map("refresh_token")
-  accessToken  String? @map("access_token")
-  expiredAt    Int     @map("expires_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-  @@map("accounts")
 }
 
 model Token {
@@ -162,7 +140,6 @@ enum VoteVerdict {
 
 enum AuthMethod {
   CREDENTIALS
-  GOOGLE
 }
 
 enum TokenType {

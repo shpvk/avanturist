@@ -89,13 +89,13 @@ describe('BuildsService.findFeed', () => {
         );
     });
 
-    it('сортировка по популярности идёт по счётчику голосов «за»', async () => {
+    it('сортировка по популярности идёт по количеству оценок', async () => {
         const { service, findMany } = createService();
 
         await service.findFeed(query({ sort: 'popular' }));
 
         expect(findMany.mock.calls[0][0].orderBy).toEqual([
-            { positiveVotes: 'desc' },
+            { votes: { _count: 'desc' } },
             { createdAt: 'desc' },
         ]);
     });

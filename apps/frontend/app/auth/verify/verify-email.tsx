@@ -20,7 +20,7 @@ export function VerifyEmail() {
 
     if (!token) {
       setStatus("failed");
-      setError("Ссылка не содержит токен подтверждения.");
+      setError("The link does not contain a confirmation token.");
       return;
     }
 
@@ -35,7 +35,7 @@ export function VerifyEmail() {
       .catch((cause: unknown) => {
         if (cancelled) return;
         setStatus("failed");
-        setError(cause instanceof Error ? cause.message : "Не удалось подтвердить почту.");
+        setError(cause instanceof Error ? cause.message : "Could not confirm the email.");
       });
 
     return () => {
@@ -44,21 +44,21 @@ export function VerifyEmail() {
   }, [params]);
 
   if (status === "pending") {
-    return <AuthShell title="Подтверждаем почту…" />;
+    return <AuthShell title="Confirming your email…" />;
   }
 
   if (status === "failed") {
     return (
-      <AuthShell title="Ссылка не сработала">
+      <AuthShell title="That link did not work">
         <p className="auth-error" role="alert">{error}</p>
-        <Link className="auth-submit" href="/login">Ко входу</Link>
+        <Link className="auth-submit" href="/login">Go to login</Link>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell title="Почта подтверждена" subtitle="Теперь можно публиковать билды и комментарии.">
-      <Link className="auth-submit" href="/">На главную</Link>
+    <AuthShell title="Email confirmed" subtitle="You can publish builds and comments now.">
+      <Link className="auth-submit" href="/">Back home</Link>
     </AuthShell>
   );
 }

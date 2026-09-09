@@ -1,12 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthMethod } from '../generated/prisma/enums';
+import { AuthMethod, UserRole } from '../generated/prisma/enums';
 import { User } from '../generated/prisma/client';
 import { hash } from 'argon2';
 
 export interface ActiveMute {
     until: Date | null;
     reason: string | null;
+}
+
+export interface PublicProfile {
+    id: string;
+    displayName: string;
+    picture: string | null;
+    role: UserRole;
+    createdAt: string;
+    buildCount: number;
 }
 
 export interface CreateUserInput {
@@ -25,7 +34,6 @@ export class UserService {
     public async findById(id: string) {
         const user = await this.prismaService.user.findUnique({
             where: { id },
-            include: { accounts: true },
         });
 
         if (!user) {
@@ -35,6 +43,33 @@ export class UserService {
         return user;
     }
 
+    public async publicProfile(id: string): Promise<PublicProfile> {
+        const user = await this.prismaService.user.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                displayName: true,
+                picture: true,
+                role: true,
+                createdAt: true,
+                _count: { select: { builds: true } },
+            },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        return {
+            id: user.id,
+            displayName: user.displayName,
+            picture: user.picture,
+            role: user.role,
+            createdAt: user.createdAt.toISOString(),
+            buildCount: user._count.builds,
+        };
+    }
+
     public async findByIdOrNull(id: string): Promise<User | null> {
         return this.prismaService.user.findUnique({ where: { id } });
     }
@@ -42,7 +77,6 @@ export class UserService {
     public async findByEmail(email: string) {
         return this.prismaService.user.findUnique({
             where: { email: email.toLowerCase() },
-            include: { accounts: true },
         });
     }
 
@@ -56,50 +90,6 @@ export class UserService {
                 method: input.method,
                 isVerified: input.isVerified,
             },
-            include: { accounts: true },
-        });
-    }
-
-    public async findByProviderAccount(
-        provider: string,
-        providerAccountId: string,
-    ): Promise<User | null> {
-        const account = await this.prismaService.account.findUnique({
-            where: {
-                provider_providerAccountId: { provider, providerAccountId },
-            },
-            include: { user: true },
-        });
-
-        return account?.user ?? null;
-    }
-
-    public async linkAccount(input: {
-        userId: string;
-        provider: string;
-        providerAccountId: string;
-    }): Promise<void> {
-        await this.prismaService.account.upsert({
-            where: {
-                provider_providerAccountId: {
-                    provider: input.provider,
-                    providerAccountId: input.providerAccountId,
-                },
-            },
-            create: {
-                userId: input.userId,
-                type: 'oauth',
-                provider: input.provider,
-                providerAccountId: input.providerAccountId,
-                accessToken: null,
-                refreshToken: null,
-                expiredAt: 0,
-            },
-            update: {
-                accessToken: null,
-                refreshToken: null,
-                expiredAt: 0,
-            },
         });
     }
 
@@ -107,6 +97,33 @@ export class UserService {
         return this.prismaService.user.update({
             where: { id },
             data: { isVerified: true },
+        });
+    }
+
+    public async updateDisplayName(
+        id: string,
+        displayName: string,
+    ): Promise<User> {
+        return this.prismaService.user.update({
+            where: { id },
+            data: { displayName },
+        });
+    }
+
+    public async updateEmail(id: string, email: string): Promise<User> {
+        return this.prismaService.user.update({
+            where: { id },
+            data: { email: email.toLowerCase(), isVerified: false },
+        });
+    }
+
+    public async updatePicture(
+        id: string,
+        picture: string | null,
+    ): Promise<User> {
+        return this.prismaService.user.update({
+            where: { id },
+            data: { picture },
         });
     }
 

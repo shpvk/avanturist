@@ -1,6 +1,8 @@
 import { login as loginRequest, logout as logoutRequest, register as registerRequest, restoreSession } from "./auth-api";
 import type { AuthProfile, LoginPayload, RegisterPayload } from "./auth-types";
 
+export type RegisterOutcome = { user: AuthProfile; verificationEmailSent: boolean };
+
 export type AuthState = {
   user: AuthProfile | null;
   isLoading: boolean;
@@ -51,10 +53,10 @@ export async function loginUser(payload: LoginPayload): Promise<AuthProfile> {
   return session.user;
 }
 
-export async function registerUser(payload: RegisterPayload): Promise<AuthProfile> {
+export async function registerUser(payload: RegisterPayload): Promise<RegisterOutcome> {
   const session = await registerRequest(payload);
   setAuthUser(session.user);
-  return session.user;
+  return { user: session.user, verificationEmailSent: session.verificationEmailSent };
 }
 
 export async function logoutUser(): Promise<void> {

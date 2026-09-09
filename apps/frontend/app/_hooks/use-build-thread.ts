@@ -12,7 +12,8 @@ import {
   restoreComment,
   unmuteUser,
 } from "../_lib/api";
-import { authorAvatar, mapComment } from "../_lib/api-mapping";
+import { mapComment } from "../_lib/api-mapping";
+import { resolveAvatar } from "../_lib/avatars";
 import { createId } from "../_lib/id";
 import type { ApiComment, ApiMute, MutePayload } from "../_lib/api-types";
 import type { Build, BuildComment } from "../_lib/types";
@@ -35,6 +36,7 @@ export type ThreadModeration = {
 export type BuildThread = {
   draft: string;
   composer: ComposerState;
+  viewerAvatar: string | null;
   error: string | null;
   moderation: ThreadModeration | null;
   muteTarget: BuildComment | null;
@@ -47,11 +49,11 @@ export type BuildThread = {
 type Mute = { until: string | null; reason: string | null };
 
 function rejectionMessage(error: ApiError): string {
-  if (error.status === 401) return "Сессия истекла. Войдите заново, чтобы комментировать.";
-  if (error.status === 403) return "Подтвердите почту, чтобы комментировать.";
-  if (error.status === 404) return "Билд уже удалён — комментарий отправить некуда.";
-  if (error.status === 429) return "Слишком много комментариев подряд. Подождите минуту.";
-  return "Не удалось отправить комментарий. Попробуйте ещё раз.";
+  if (error.status === 401) return "Your session expired. Log in again to comment.";
+  if (error.status === 403) return "Confirm your email to comment.";
+  if (error.status === 404) return "This build has been deleted — there is nowhere to post the comment.";
+  if (error.status === 429) return "Too many comments in a row. Wait a minute.";
+  return "Could not post the comment. Please try again.";
 }
 
 type BuildThreadInput = {
@@ -128,8 +130,8 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
       id: createId(`${buildId}-comment`),
       author: user.displayName,
       authorId: user.id,
-      avatar: authorAvatar(user.displayName),
-      date: "только что",
+      avatar: resolveAvatar(user.picture, user.displayName),
+      date: "just now",
       text,
     };
 
@@ -212,7 +214,7 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
     try {
       applyMute(authorId, await unmuteUser(authorId));
     } catch {
-      setError("Не удалось снять мут. Попробуйте ещё раз.");
+      setError("Could not lift the mute. Please try again.");
     }
   }, [applyMute]);
 
@@ -221,8 +223,8 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
 
     return {
       pendingId,
-      onHide: (commentId) => void runModeration(commentId, () => hideComment(commentId), "Не удалось скрыть комментарий."),
-      onRestore: (commentId) => void runModeration(commentId, () => restoreComment(commentId), "Не удалось вернуть комментарий."),
+      onHide: (commentId) => void runModeration(commentId, () => hideComment(commentId), "Could not hide the comment."),
+      onRestore: (commentId) => void runModeration(commentId, () => restoreComment(commentId), "Could not restore the comment."),
       onMute: setMuteTarget,
       onUnmute: (authorId) => void unmute(authorId),
     };
@@ -231,6 +233,7 @@ export function useBuildThread({ currentBuild, replaceBuild, updateComments }: B
   return {
     draft: buildId ? (drafts[buildId] ?? "") : "",
     composer,
+    viewerAvatar: user ? resolveAvatar(user.picture, user.displayName) : null,
     error,
     moderation,
     muteTarget,

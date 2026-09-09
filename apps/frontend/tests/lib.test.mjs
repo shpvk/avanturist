@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { commentsLabel, reputationValue } from "../app/_lib/format.ts";
+import { commentsLabel, maskEmail, reputationValue } from "../app/_lib/format.ts";
 import { votePercentages } from "../app/_lib/votes.ts";
 import { createId } from "../app/_lib/id.ts";
 import { searchShop, shopSections } from "../app/_lib/shop-order.ts";
@@ -9,24 +9,39 @@ import { dotaItems } from "../app/_lib/dota-items.ts";
 import { heroRole } from "../app/_lib/hero-roles.ts";
 import { pageItems } from "../app/_lib/pagination.ts";
 import { canDeleteBuild } from "../app/_lib/ownership.ts";
+import {
+  addItem,
+  canAdd,
+  canPlace,
+  carriedSize,
+  emptySlots,
+  fromSlots,
+  neutralSlotIndex,
+  placeInSlot,
+  scepterSlotIndex,
+  shardSlotIndex,
+  splitInventory,
+} from "../app/_lib/inventory.ts";
 
-test("commentsLabel picks the Russian plural form", () => {
-  assert.equal(commentsLabel(0), "0 комментариев");
-  assert.equal(commentsLabel(1), "1 комментарий");
-  assert.equal(commentsLabel(2), "2 комментария");
-  assert.equal(commentsLabel(4), "4 комментария");
-  assert.equal(commentsLabel(5), "5 комментариев");
-  assert.equal(commentsLabel(11), "11 комментариев");
-  assert.equal(commentsLabel(14), "14 комментариев");
-  assert.equal(commentsLabel(21), "21 комментарий");
-  assert.equal(commentsLabel(102), "102 комментария");
-  assert.equal(commentsLabel(111), "111 комментариев");
+test("commentsLabel picks the English plural form", () => {
+  assert.equal(commentsLabel(0), "0 comments");
+  assert.equal(commentsLabel(1), "1 comment");
+  assert.equal(commentsLabel(2), "2 comments");
+  assert.equal(commentsLabel(21), "21 comments");
+  assert.equal(commentsLabel(111), "111 comments");
+});
+
+test("maskEmail keeps only the first letter of the address", () => {
+  assert.equal(maskEmail("silentstep@example.com"), "s********");
+  assert.equal(maskEmail("  a@b.co "), "a********");
+  assert.equal(maskEmail(""), "");
+  assert.equal(maskEmail("q@x.io").length, maskEmail("verylongaddress@example.org").length);
 });
 
 test("reputationValue reads the number out of the display string", () => {
   assert.equal(reputationValue("1 245"), 1245);
   assert.equal(reputationValue("0"), 0);
-  assert.equal(reputationValue("нет данных"), 0);
+  assert.equal(reputationValue("no data"), 0);
 });
 
 test("votePercentages leaves the tally alone until the reader votes", () => {
@@ -76,7 +91,7 @@ const shop = [
 
 const ids = (items) => items.map((item) => item.id);
 
-test("каждый предмет каталога попадает ровно в одну полку одной вкладки", () => {
+test("every catalog item lands on exactly one shelf of one tab", () => {
   const shelved = ["basics", "upgrades", "neutrals"]
     .flatMap((tab) => shopSections(dotaItems, tab))
     .flatMap((section) => section.items.map((item) => item.id));
@@ -85,15 +100,15 @@ test("каждый предмет каталога попадает ровно �
   assert.equal(new Set(shelved).size, dotaItems.length);
 });
 
-test("shopSections раскладывает базовые предметы по полкам магазина", () => {
+test("shopSections lays the basic items out across the shop shelves", () => {
   const sections = shopSections(shop, "basics");
 
-  assert.deepEqual(sections.map((section) => section.label), ["Расходники", "Снаряжение", "Секретная лавка"]);
+  assert.deepEqual(sections.map((section) => section.label), ["Consumables", "Equipment", "Secret shop"]);
   assert.deepEqual(ids(sections[0].items), ["tango"]);
   assert.deepEqual(ids(sections[2].items), ["relic"]);
 });
 
-test("внутри полки предметы идут от дешёвых к дорогим, как в магазине", () => {
+test("within a shelf the items run from cheap to expensive, as in the shop", () => {
   const priced = [
     { id: "b", name: "B", cost: 900, category: "upgrade", shelf: "rare" },
     { id: "a", name: "A", cost: 2100, category: "upgrade", shelf: "rare" },
@@ -103,35 +118,35 @@ test("внутри полки предметы идут от дешёвых к �
   assert.deepEqual(ids(shopSections(priced, "upgrades")[0].items), ["c", "b", "a"]);
 });
 
-test("нейтральные предметы разложены по уровням", () => {
+test("neutral items are grouped by tier", () => {
   const sections = shopSections(shop, "neutrals");
 
-  assert.deepEqual(sections.map((section) => section.label), ["1 уровень", "2 уровень"]);
+  assert.deepEqual(sections.map((section) => section.label), ["Tier 1", "Tier 2"]);
   assert.deepEqual(ids(sections[0].items), ["pogo_stick"]);
 });
 
-test("searchShop ищет по названию и по идентификатору, совпадением ближе к началу", () => {
+test("searchShop matches on name and id, preferring matches nearer the start", () => {
   assert.deepEqual(ids(searchShop(shop, "battle fury")), ["bfury"]);
   assert.deepEqual(ids(searchShop(shop, "BFURY")), ["bfury"]);
   assert.deepEqual(ids(searchShop(shop, "pogo stick")), ["pogo_stick"]);
   assert.deepEqual(ids(searchShop(shop, "ring")), ["arcane_ring"]);
   assert.deepEqual(searchShop(shop, "   "), []);
-  assert.deepEqual(searchShop(shop, "нет такого"), []);
+  assert.deepEqual(searchShop(shop, "no such item"), []);
 });
 
 test("heroRole reads the curated lane for a hero it knows", () => {
-  assert.deepEqual(heroRole("antimage"), { role: "Керри", roleClass: "carry" });
-  assert.deepEqual(heroRole("shadow_shaman"), { role: "Саппорт", roleClass: "support" });
-  assert.deepEqual(heroRole("leshrac", ["Carry", "Support"]), { role: "Мид", roleClass: "mid" });
+  assert.deepEqual(heroRole("antimage"), { role: "Carry", roleClass: "carry" });
+  assert.deepEqual(heroRole("shadow_shaman"), { role: "Support", roleClass: "support" });
+  assert.deepEqual(heroRole("leshrac", ["Carry", "Support"]), { role: "Mid", roleClass: "mid" });
 });
 
 test("heroRole falls back to OpenDota's tags for a hero it has never seen", () => {
-  assert.deepEqual(heroRole("brand_new_hero", ["Initiator", "Durable"]), { role: "Оффлейн", roleClass: "offlane" });
-  assert.deepEqual(heroRole("brand_new_hero", ["Support"]), { role: "Саппорт", roleClass: "support" });
-  assert.deepEqual(heroRole("brand_new_hero"), { role: "Керри", roleClass: "carry" });
+  assert.deepEqual(heroRole("brand_new_hero", ["Initiator", "Durable"]), { role: "Offlane", roleClass: "offlane" });
+  assert.deepEqual(heroRole("brand_new_hero", ["Support"]), { role: "Support", roleClass: "support" });
+  assert.deepEqual(heroRole("brand_new_hero"), { role: "Carry", roleClass: "carry" });
 });
 
-test("canDeleteBuild отдаёт свою сборку автору и любую — администратору", () => {
+test("canDeleteBuild gives an author their own build and an admin any build", () => {
   const build = { id: "b1", authorId: "user-1" };
   const author = { id: "user-1", role: "REGULAR" };
   const stranger = { id: "user-2", role: "REGULAR" };
@@ -142,4 +157,70 @@ test("canDeleteBuild отдаёт свою сборку автору и любу
   assert.equal(canDeleteBuild(build, stranger), false);
   assert.equal(canDeleteBuild(build, null), false);
   assert.equal(canDeleteBuild({ id: "b2" }, author), false);
+});
+
+test("an item lands in exactly the slot it was dragged into", () => {
+  const slots = placeInSlot(emptySlots(), "blade_mail", 4, null);
+  assert.equal(slots[4], "blade_mail");
+  assert.equal(slots[0], null);
+
+  const swapped = placeInSlot(placeInSlot(slots, "manta", 1, null), "manta", 4, 1);
+  assert.equal(swapped[4], "manta");
+  assert.equal(swapped[1], "blade_mail");
+});
+
+test("the same item can be added several times, a blessing and a shard cannot", () => {
+  const many = addItem(addItem(addItem(emptySlots(), "manta"), "manta"), "manta");
+  assert.deepEqual(fromSlots(many), ["manta", "manta", "manta"]);
+
+  const aghanims = addItem(addItem(emptySlots(), "ultimate_scepter_2"), "aghanims_shard");
+  assert.deepEqual(fromSlots(addItem(aghanims, "ultimate_scepter_2")), ["ultimate_scepter_2", "aghanims_shard"]);
+  assert.equal(canPlace("ultimate_scepter_2", 0), false);
+  assert.equal(canPlace("aghanims_shard", neutralSlotIndex), false);
+});
+
+test("a plain Aghanim is an inventory item, not a blessing", () => {
+  assert.equal(canPlace("ultimate_scepter", 0), true);
+  assert.equal(canPlace("ultimate_scepter", scepterSlotIndex), false);
+  assert.equal(addItem(emptySlots(), "ultimate_scepter")[0], "ultimate_scepter");
+
+  const shown = splitInventory(["ultimate_scepter", "ultimate_scepter_2", "aghanims_shard"]);
+  assert.equal(shown.main[0], "ultimate_scepter");
+  assert.equal(shown.scepter, "ultimate_scepter_2");
+  assert.equal(shown.shard, "aghanims_shard");
+});
+
+test("a neutral item lives only in its own slot", () => {
+  assert.equal(canPlace("fallen_sky", 0), false);
+  assert.equal(canPlace("fallen_sky", neutralSlotIndex), true);
+  assert.deepEqual(placeInSlot(emptySlots(), "fallen_sky", 0, null), emptySlots());
+  assert.equal(addItem(emptySlots(), "fallen_sky")[neutralSlotIndex], "fallen_sky");
+
+  const replaced = addItem(addItem(emptySlots(), "fallen_sky"), "pogo_stick");
+  assert.deepEqual(fromSlots(replaced), ["pogo_stick"]);
+
+  const shown = splitInventory(["manta", "fallen_sky", "pogo_stick"]);
+  assert.deepEqual(shown.main.filter(Boolean), ["manta"]);
+  assert.equal(shown.neutral, "fallen_sky");
+});
+
+test("the blessing and shard slots reject any other item", () => {
+  assert.deepEqual(placeInSlot(emptySlots(), "manta", scepterSlotIndex, null), emptySlots());
+  assert.deepEqual(placeInSlot(emptySlots(), "manta", shardSlotIndex, null), emptySlots());
+  assert.equal(placeInSlot(emptySlots(), "fallen_sky", neutralSlotIndex, null)[neutralSlotIndex], "fallen_sky");
+});
+
+test("a build holds 9 items, with the Aghanim and neutral slots on top", () => {
+  let slots = emptySlots();
+  for (let index = 0; index < 12; index += 1) slots = addItem(slots, "manta");
+
+  assert.equal(carriedSize(slots), 9);
+  assert.equal(canAdd(slots, "manta"), false);
+  assert.equal(canAdd(slots, "ultimate_scepter_2"), true);
+  assert.equal(canAdd(slots, "aghanims_shard"), true);
+  assert.equal(canAdd(slots, "fallen_sky"), true);
+
+  const full = addItem(addItem(addItem(slots, "ultimate_scepter_2"), "aghanims_shard"), "fallen_sky");
+  assert.equal(carriedSize(full), 9);
+  assert.equal(fromSlots(full).length, 12);
 });

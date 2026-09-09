@@ -3,10 +3,10 @@ import type { RoleClass } from "./types";
 type Role = { role: string; roleClass: RoleClass };
 
 const roleLabels: Record<RoleClass, string> = {
-  carry: "Керри",
-  mid: "Мид",
-  offlane: "Оффлейн",
-  support: "Саппорт",
+  carry: "Carry",
+  mid: "Mid",
+  offlane: "Offlane",
+  support: "Support",
 };
 
 const lanesByRole: Record<RoleClass, string[]> = {

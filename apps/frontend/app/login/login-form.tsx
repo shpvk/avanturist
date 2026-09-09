@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell } from "../_components/auth-shell";
-import { GoogleButton } from "../_components/google-button";
 import { PasswordField } from "../_components/password-field";
 import { useAuth } from "../_hooks/use-auth";
 
@@ -23,7 +22,7 @@ export function LoginForm() {
 
     try {
       await login({ email, password });
-      router.push("/");
+      router.push("/app");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not sign in.");
     } finally {
@@ -40,9 +39,6 @@ export function LoginForm() {
         </>
       }
     >
-      <GoogleButton />
-      <div className="auth-divider"><span>or</span></div>
-
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <label className="auth-field" htmlFor="login-email">
           <span className="auth-label">Email</span>

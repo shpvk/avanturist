@@ -16,6 +16,7 @@ type BuildCommentsProps = {
   comments: BuildComment[];
   count: number;
   draft: string;
+  viewerAvatar: string | null;
   composer: ComposerState;
   moderation: ThreadModeration | null;
   error: string | null;
@@ -28,6 +29,7 @@ export function BuildComments({
   comments,
   count,
   draft,
+  viewerAvatar,
   composer,
   moderation,
   error,
@@ -44,28 +46,31 @@ export function BuildComments({
   const composerBusy = composer.kind === "loading";
 
   return (
-    <section className="build-comments" aria-label="Комментарии к билду">
+    <section className="build-comments" aria-label="Comments on this build">
       <div className="build-comments-head">
-        <span className="section-label">Комментарии</span>
+        <span className="section-label">Comments</span>
         <div className="build-comments-tools">
           <span className="random-comment-count"><i aria-hidden="true">•••</i>{commentsLabel(count)}</span>
         </div>
       </div>
       {composer.kind === "ready" || composerBusy ? (
         <form className="comment-composer" onSubmit={handleSubmit}>
-          <label className="sr-only" htmlFor={`comment-${buildId}`}>Комментарий к билду</label>
+          <label className="sr-only" htmlFor={`comment-${buildId}`}>Your comment on this build</label>
+          {viewerAvatar
+            ? <Image className="composer-avatar" src={viewerAvatar} alt="" width={64} height={64} unoptimized />
+            : <span className="composer-avatar" aria-hidden="true" />}
           <textarea
             id={`comment-${buildId}`}
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
             maxLength={maxCommentLength}
             rows={2}
-            placeholder="Что думаете об этой сборке?"
+            placeholder="What do you make of this build?"
             disabled={composerBusy}
           />
           <div className="comment-composer-footer">
             <span>{draft.length}{`/${maxCommentLength}`}</span>
-            <button type="submit" disabled={composerBusy || !draft.trim()}>Отправить</button>
+            <button type="submit" disabled={composerBusy || !draft.trim()}>Post</button>
           </div>
         </form>
       ) : (
@@ -76,7 +81,7 @@ export function BuildComments({
         {comments.map((comment) => (
           <CommentRow key={comment.id} comment={comment} moderation={moderation} />
         ))}
-        {comments.length === 0 && <li className="comment-empty">Комментариев пока нет — напишите первый.</li>}
+        {comments.length === 0 && <li className="comment-empty">No comments yet — write the first one.</li>}
       </ol>
     </section>
   );
@@ -93,7 +98,7 @@ function CommentRow({ comment, moderation }: { comment: BuildComment; moderation
         <div className="comment-item-head">
           <strong>{comment.author}</strong>
           {moderation && comment.authorMuted && (
-            <span className="mute-badge">в муте {formatMuteDeadline(comment.authorMutedUntil ?? null)}</span>
+            <span className="mute-badge">muted {formatMuteDeadline(comment.authorMutedUntil ?? null)}</span>
           )}
           <span>{comment.date}</span>
         </div>
@@ -102,23 +107,23 @@ function CommentRow({ comment, moderation }: { comment: BuildComment; moderation
           <div className="comment-moderation">
             {comment.hidden ? (
               <>
-                <span className="comment-hidden-note">Скрыт модератором — виден только вам</span>
+                <span className="comment-hidden-note">Hidden by a moderator — only you can see it</span>
                 <button type="button" disabled={busy} onClick={() => moderation.onRestore(comment.id)}>
-                  <RestoreIcon />Вернуть
+                  <RestoreIcon />Restore
                 </button>
               </>
             ) : (
               <button className="destructive" type="button" disabled={busy} onClick={() => moderation.onHide(comment.id)}>
-                <HideIcon />Скрыть
+                <HideIcon />Hide
               </button>
             )}
             {authorId && (comment.authorMuted ? (
               <button type="button" disabled={busy} onClick={() => moderation.onUnmute(authorId)}>
-                <UnmuteIcon />Снять мут
+                <UnmuteIcon />Unmute
               </button>
             ) : (
               <button type="button" disabled={busy} onClick={() => moderation.onMute(comment)}>
-                <MuteIcon />Замутить
+                <MuteIcon />Mute
               </button>
             ))}
           </div>
@@ -132,7 +137,7 @@ function ComposerNotice({ state }: { state: ComposerState }) {
   if (state.kind === "anonymous") {
     return (
       <p className="comment-notice">
-        Чтобы обсуждать сборки, <Link href="/login">войдите в аккаунт</Link>. Оценивать билды можно и без входа.
+        To join the discussion, <Link href="/login">log in</Link>. Voting on builds works without an account.
       </p>
     );
   }
@@ -140,7 +145,8 @@ function ComposerNotice({ state }: { state: ComposerState }) {
   if (state.kind === "unverified") {
     return (
       <p className="comment-notice">
-        Подтвердите почту по ссылке из письма — после этого откроются комментарии и публикация сборок.
+        Confirm your email using the link we sent — commenting and publishing open up after that.{" "}
+        <Link href="/auth/check-email">Send the message again</Link>.
       </p>
     );
   }
@@ -148,9 +154,9 @@ function ComposerNotice({ state }: { state: ComposerState }) {
   if (state.kind === "muted") {
     return (
       <div className="comment-notice muted">
-        <strong>Комментарии закрыты {formatMuteDeadline(state.until)}</strong>
-        {state.reason && <span>Причина: {state.reason}</span>}
-        <span>Оценивать билды и публиковать свои сборки по-прежнему можно.</span>
+        <strong>Commenting is closed {formatMuteDeadline(state.until)}</strong>
+        {state.reason && <span>Reason: {state.reason}</span>}
+        <span>You can still vote on builds and publish your own.</span>
       </div>
     );
   }

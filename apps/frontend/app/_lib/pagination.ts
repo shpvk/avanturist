@@ -1,3 +1,5 @@
+export const pageSize = 12;
+
 export type PageItem = number | "gap";
 
 const windowSize = 3;

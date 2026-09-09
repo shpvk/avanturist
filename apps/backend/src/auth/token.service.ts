@@ -82,52 +82,6 @@ export class TokenService {
         };
     }
 
-    public async stashForExchange(pair: TokenPair, userId: string): Promise<string> {
-        const code = randomBytes(24).toString('base64url');
-
-        await this.redisService.client.set(
-            this.exchangeKey(code),
-            JSON.stringify({ ...pair, userId }),
-            'EX',
-            60,
-        );
-
-        return code;
-    }
-
-    public async claimExchange(
-        code: string,
-    ): Promise<TokenPair & { userId: string }> {
-        const key = this.exchangeKey(code);
-        const raw = await this.redisService.client.getdel(key);
-
-        if (!raw) {
-            throw new UnauthorizedException('Exchange code is invalid or expired.');
-        }
-
-        return JSON.parse(raw) as TokenPair & { userId: string };
-    }
-
-    public async issueOAuthState(): Promise<string> {
-        const state = randomBytes(24).toString('base64url');
-
-        await this.redisService.client.set(this.stateKey(state), '1', 'EX', 600);
-
-        return state;
-    }
-
-    public async claimOAuthState(state: string | undefined): Promise<boolean> {
-        if (!state) {
-            return false;
-        }
-
-        const claimed = await this.redisService.client.getdel(
-            this.stateKey(state),
-        );
-
-        return claimed !== null;
-    }
-
     public async revoke(rawToken: string): Promise<void> {
         let parsed: ParsedRefreshToken;
 
@@ -366,15 +320,7 @@ export class TokenService {
         return `${this.prefix}family:${familyId}`;
     }
 
-    private exchangeKey(code: string): string {
-        return `${this.prefix}exchange:${code}`;
-    }
-
     private killswitchKey(userId: string): string {
         return `${this.prefix}killswitch:${userId}`;
-    }
-
-    private stateKey(state: string): string {
-        return `${this.prefix}oauth-state:${state}`;
     }
 }

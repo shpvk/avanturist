@@ -9,24 +9,24 @@ export type ShopSection = {
 };
 
 export const shopTabs: Array<{ value: ShopTab; label: string }> = [
-  { value: "basics", label: "Базовые" },
-  { value: "upgrades", label: "Составные" },
-  { value: "neutrals", label: "Нейтральные" },
+  { value: "basics", label: "Basics" },
+  { value: "upgrades", label: "Upgrades" },
+  { value: "neutrals", label: "Neutrals" },
 ];
 
 const basicsShelves: Array<{ shelf: ItemShelf; label: string }> = [
-  { shelf: "consumable", label: "Расходники" },
-  { shelf: "component", label: "Снаряжение" },
-  { shelf: "secret_shop", label: "Секретная лавка" },
+  { shelf: "consumable", label: "Consumables" },
+  { shelf: "component", label: "Equipment" },
+  { shelf: "secret_shop", label: "Secret shop" },
 ];
 
 const upgradeShelves: Array<{ shelf: ItemShelf; label: string }> = [
-  { shelf: "component", label: "Аксессуары" },
-  { shelf: "common", label: "Поддержка" },
-  { shelf: "rare", label: "Магия" },
-  { shelf: "epic", label: "Броня и оружие" },
-  { shelf: "artifact", label: "Артефакты" },
-  { shelf: "secret_shop", label: "Секретная лавка" },
+  { shelf: "component", label: "Accessories" },
+  { shelf: "common", label: "Support" },
+  { shelf: "rare", label: "Magic" },
+  { shelf: "epic", label: "Armor and weapons" },
+  { shelf: "artifact", label: "Artifacts" },
+  { shelf: "secret_shop", label: "Secret shop" },
 ];
 
 const byCost = (first: DotaItem, second: DotaItem) =>
@@ -43,7 +43,7 @@ function shelves(items: DotaItem[], order: Array<{ shelf: ItemShelf; label: stri
   }));
 
   const rest = items.filter((item) => !known.has(item.shelf)).sort(byCost);
-  if (rest.length > 0) sections.push({ key: "rest", label: "Прочее", items: rest });
+  if (rest.length > 0) sections.push({ key: "rest", label: "Other", items: rest });
 
   return sections.filter((section) => section.items.length > 0);
 }
@@ -54,7 +54,7 @@ function tiers(items: DotaItem[]): ShopSection[] {
   return known
     .map((tier) => ({
       key: `tier-${tier}`,
-      label: tier > 0 ? `${tier} уровень` : "Без уровня",
+      label: tier > 0 ? `Tier ${tier}` : "No tier",
       items: items.filter((item) => (item.tier ?? 0) === tier).sort(byName),
     }))
     .filter((section) => section.items.length > 0);

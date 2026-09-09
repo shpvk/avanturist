@@ -3,9 +3,10 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import type { DragEvent, FormEvent } from "react";
-import { BuildInventoryEditor, itemDragType } from "./build-inventory-editor";
-import { itemOptions, maxItemsPerBuild } from "../_lib/build-data";
-import { dropItem, inventorySize, placeItem } from "../_lib/inventory";
+import { BuildInventoryEditor, startItemDrag } from "./build-inventory-editor";
+import { itemOptions } from "../_lib/build-data";
+import { addItem, canAdd, clearSlot, dedicatedSlot, emptySlots, fromSlots, placeInSlot } from "../_lib/inventory";
+import type { Slots } from "../_lib/inventory";
 import { searchShop, shopSections, shopTabs } from "../_lib/shop-order";
 import type { ShopTab } from "../_lib/shop-order";
 import { useDialogA11y } from "../_hooks/use-dialog-a11y";
@@ -30,10 +31,11 @@ type ShopItemProps = {
 };
 
 function ShopItem({ item, isSelected, isDisabled, onPick }: ShopItemProps) {
+  const isUnique = dedicatedSlot(item.id) !== null;
+
   const handleDragStart = (event: DragEvent) => {
     if (isDisabled) return event.preventDefault();
-    event.dataTransfer.setData(itemDragType, item.id);
-    event.dataTransfer.effectAllowed = "move";
+    startItemDrag(event.dataTransfer, item.id, null);
   };
 
   return (
@@ -43,8 +45,8 @@ function ShopItem({ item, isSelected, isDisabled, onPick }: ShopItemProps) {
       draggable={!isDisabled}
       onDragStart={handleDragStart}
       onClick={() => onPick(item.id)}
-      aria-pressed={isSelected}
-      aria-label={`${isSelected ? "Убрать" : "Добавить"} предмет ${item.name}`}
+      aria-pressed={isUnique ? isSelected : undefined}
+      aria-label={`${isUnique && isSelected ? "Remove" : "Add"} the item ${item.name}`}
       title={item.cost > 0 ? `${item.name} — ${item.cost}` : item.name}
       disabled={isDisabled}
     >
@@ -54,9 +56,9 @@ function ShopItem({ item, isSelected, isDisabled, onPick }: ShopItemProps) {
 }
 
 export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProps) {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [slots, setSlots] = useState<Slots>(emptySlots);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<ShopTab>("basics");
+  const [tab, setTab] = useState<ShopTab>("upgrades");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const dialogRef = useDialogA11y<HTMLElement>(onClose);
@@ -65,28 +67,25 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
   const found = useMemo(() => searchShop(itemOptions, query), [query]);
   const sections = useMemo(() => shopSections(itemOptions, tab), [tab]);
 
-  const taken = inventorySize(selectedItems);
-  const isFull = taken >= maxItemsPerBuild;
+  const selectedItems = fromSlots(slots);
 
   const pickItem = (item: string) => {
     setError(null);
-    setSelectedItems((current) => {
-      if (current.includes(item)) return dropItem(current, item);
-      return inventorySize(current) < maxItemsPerBuild ? [...current, item] : current;
+    setSlots((current) => {
+      const dedicated = dedicatedSlot(item);
+      if (dedicated !== null && current[dedicated] === item) return clearSlot(current, dedicated);
+      return addItem(current, item);
     });
   };
 
-  const placeAt = (item: string, slot: number) => {
+  const placeAt = (item: string, slot: number, from: number | null) => {
     setError(null);
-    setSelectedItems((current) => {
-      if (!current.includes(item) && inventorySize(current) >= maxItemsPerBuild) return current;
-      return placeItem(current, item, slot);
-    });
+    setSlots((current) => placeInSlot(current, item, slot, from));
   };
 
-  const removeItem = (item: string) => {
+  const removeAt = (slot: number) => {
     setError(null);
-    setSelectedItems((current) => dropItem(current, item));
+    setSlots((current) => clearSlot(current, slot));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -97,16 +96,16 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
     const heroId = String(formData.get("hero") ?? "");
     const title = String(formData.get("title") ?? "").trim();
 
-    if (!heroes.some((hero) => hero.id === heroId)) return setError("Выберите героя.");
-    if (title.length < minTitleLength) return setError(`Название должно быть не короче ${minTitleLength} символов.`);
-    if (selectedItems.length === 0) return setError("Выберите хотя бы один предмет.");
+    if (!heroes.some((hero) => hero.id === heroId)) return setError("Pick a hero.");
+    if (title.length < minTitleLength) return setError(`The name must be at least ${minTitleLength} characters long.`);
+    if (selectedItems.length === 0) return setError("Pick at least one item.");
 
     setIsSaving(true);
     setError(null);
     try {
       await onSubmit({ heroId, title, items: selectedItems });
     } catch {
-      setError("Не удалось сохранить билд. Попробуйте ещё раз.");
+      setError("Could not save the build. Please try again.");
       setIsSaving(false);
     }
   };
@@ -116,7 +115,7 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
       key={item.id}
       item={item}
       isSelected={selectedItems.includes(item.id)}
-      isDisabled={isFull && !selectedItems.includes(item.id)}
+      isDisabled={!canAdd(slots, item.id)}
       onPick={pickItem}
     />
   );
@@ -126,31 +125,31 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
       <section ref={dialogRef} className="add-build-dialog" role="dialog" aria-modal="true" aria-labelledby="add-build-title" aria-describedby="add-build-description" tabIndex={-1}>
         <div className="dialog-heading">
           <div>
-            <span className="eyebrow">Новая сборка</span>
-            <h2 id="add-build-title">Добавить билд</h2>
-            <p id="add-build-description">Перетащите предметы из магазина в инвентарь или нажмите на них.</p>
+            <span className="eyebrow">New build</span>
+            <h2 id="add-build-title">Add a build</h2>
+            <p id="add-build-description">Drag items from the shop into the inventory, or just click them.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Закрыть форму">×</button>
+          <button type="button" onClick={onClose} aria-label="Close the form">×</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="add-build-columns">
             <div className="add-build-side">
-              <label className="form-field"><span>Герой</span><select name="hero" defaultValue={heroes[0]?.id} required>{heroes.map((hero) => <option key={hero.id} value={hero.id}>{hero.hero}</option>)}</select></label>
-              <label className="form-field"><span>Название</span><input name="title" type="text" minLength={minTitleLength} maxLength={maxTitleLength} placeholder="Придумайте название сборки" required onChange={() => setError(null)} /></label>
+              <label className="form-field"><span>Hero</span><select name="hero" defaultValue={heroes[0]?.id} required>{heroes.map((hero) => <option key={hero.id} value={hero.id}>{hero.hero}</option>)}</select></label>
+              <label className="form-field"><span>Name</span><input name="title" type="text" minLength={minTitleLength} maxLength={maxTitleLength} placeholder="Give the build a name" required onChange={() => setError(null)} /></label>
               <div className="build-preview">
-                <span className="section-label">Сборка</span>
-                <BuildInventoryEditor items={selectedItems} onDropItem={placeAt} onRemove={removeItem} />
-                <p className="build-preview-hint">{taken > 0 ? "Нажмите на предмет, чтобы убрать его." : "Инвентарь пуст — перетащите сюда предметы."}</p>
+                <span className="section-label">The build</span>
+                <BuildInventoryEditor slots={slots} onDropItem={placeAt} onClear={removeAt} />
+                <p className="build-preview-hint">{selectedItems.length > 0 ? "Click an item to remove it." : "The inventory is empty — drag items in here."}</p>
               </div>
             </div>
 
             <fieldset className="item-shop">
-              <legend>Магазин</legend>
+              <legend>Shop</legend>
               <div className="item-shop-search">
                 <span className="search-icon" aria-hidden="true" />
-                <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="Поиск предмета" aria-label="Поиск предмета" />
+                <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }} placeholder="Search items" aria-label="Search items" />
               </div>
-              <div className="item-shop-tabs" role="tablist" aria-label="Полки магазина">
+              <div className="item-shop-tabs" role="tablist" aria-label="Shop shelves">
                 {shopTabs.map((option) => (
                   <button key={option.value} className={option.value === tab && !isSearching ? "selected" : ""} type="button" role="tab" aria-selected={option.value === tab && !isSearching} onClick={() => { setTab(option.value); setQuery(""); }}>{option.label}</button>
                 ))}
@@ -159,7 +158,7 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
                 {isSearching ? (
                   found.length > 0
                     ? <div className="item-shop-shelf"><div className="item-shop-grid">{found.map(renderItem)}</div></div>
-                    : <p className="item-picker-empty">Ничего не нашлось — попробуйте другое название.</p>
+                    : <p className="item-picker-empty">Nothing found — try a different name.</p>
                 ) : sections.map((section) => (
                   <div className="item-shop-shelf" key={section.key}>
                     <span className="section-label">{section.label}</span>
@@ -171,9 +170,8 @@ export function AddBuildDialog({ heroes, onClose, onSubmit }: AddBuildDialogProp
           </div>
           {error && <p className="sr-only" role="alert">{error}</p>}
           <div className="dialog-actions">
-            <span>{taken}{`/${maxItemsPerBuild} предметов`}</span>
-            <button className="cancel-button" type="button" onClick={onClose}>Отмена</button>
-            <button className="submit-build-button" type="submit" disabled={selectedItems.length === 0 || isSaving}>Добавить билд</button>
+            <button className="cancel-button" type="button" onClick={onClose}>Cancel</button>
+            <button className="submit-build-button" type="submit" disabled={selectedItems.length === 0 || isSaving}>Add build</button>
           </div>
         </form>
       </section>

@@ -33,20 +33,20 @@ export function DeleteBuildButton({ title, className, onDelete }: DeleteBuildBut
         className={`delete-build ${className ?? ""}`.trim()}
         type="button"
         onClick={() => setIsConfirming(true)}
-        aria-label={`Удалить билд «${title}»`}
+        aria-label={`Delete the build “${title}”`}
       >
-        Удалить
+        Delete
       </button>
     );
   }
 
   return (
-    <span className={`delete-build-confirm ${className ?? ""}`.trim()} role="group" aria-label={`Удалить билд «${title}»?`}>
-      <span aria-hidden="true">Удалить?</span>
+    <span className={`delete-build-confirm ${className ?? ""}`.trim()} role="group" aria-label={`Delete the build “${title}”?`}>
+      <span aria-hidden="true">Delete?</span>
       <button ref={confirmRef} className="destructive" type="button" disabled={isBusy} onClick={() => void handleDelete()}>
-        {isBusy ? "Удаляем…" : "Да"}
+        {isBusy ? "Deleting…" : "Yes"}
       </button>
-      <button type="button" disabled={isBusy} onClick={() => setIsConfirming(false)}>Нет</button>
+      <button type="button" disabled={isBusy} onClick={() => setIsConfirming(false)}>No</button>
     </span>
   );
 }
