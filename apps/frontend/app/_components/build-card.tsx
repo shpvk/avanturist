@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DeleteBuildButton } from "./delete-build-button";
 import { ItemIcons } from "./item-icons";
 import { commentsLabel } from "../_lib/format";
+import { itemImage, itemLabel } from "../_lib/build-data";
 import { splitInventory } from "../_lib/inventory";
 import type { Build } from "../_lib/types";
 
@@ -38,7 +39,7 @@ type BuildCardProps = {
 
 export function BuildCard({ build, index, onOpen, canDelete = false, onDelete }: BuildCardProps) {
   const approval = build.votes[0];
-  const carried = splitInventory(build.items).main;
+  const { main: carried, scepter, shard, neutral } = splitInventory(build.items);
   const buildHref = `/app?build=${build.id}`;
   const openLabel = `Open the build “${build.title}”`;
   const artwork = (
@@ -65,7 +66,18 @@ export function BuildCard({ build, index, onOpen, canDelete = false, onDelete }:
             <Link href={buildHref} aria-label={openLabel}>{build.title}</Link>
           )}
         </h2>
-        <div className="build-card-items"><ItemIcons items={carried} /></div>
+        <div className="build-card-items">
+          {(scepter || shard) && (
+            <div className="build-card-aghanims">
+              {scepter && <Image src={itemImage(scepter)} alt={itemLabel(scepter)} title={itemLabel(scepter)} width={44} height={32} loading="lazy" unoptimized />}
+              {shard && <Image src={itemImage(shard)} alt={itemLabel(shard)} title={itemLabel(shard)} width={44} height={32} loading="lazy" unoptimized />}
+            </div>
+          )}
+          <ItemIcons items={carried} />
+          {neutral && (
+            <Image className="build-card-neutral" src={itemImage(neutral)} alt={itemLabel(neutral)} title={itemLabel(neutral)} width={60} height={44} loading="lazy" unoptimized />
+          )}
+        </div>
         <div className="build-card-footer">
           <span className="build-card-author">{build.author}</span>
           <span className={`build-card-approval ${approvalTone(approval)}`} aria-label={`Likes ${approval}%`}>
