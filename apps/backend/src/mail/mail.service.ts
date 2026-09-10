@@ -8,6 +8,7 @@ import { VerificationEmail } from './templates/verification.template';
 import { PasswordResetEmail } from './templates/password-reset.template';
 import { MailDeliveryError } from './mail-delivery.error';
 import { buildMailTransport, describeMailTransport } from './mail-transport.config';
+import { parseAllowedOrigins } from '../libs/common/utils/allowed-origins.utils';
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
@@ -63,7 +64,7 @@ export class MailService implements OnApplicationBootstrap {
 
         await this.send(
             email,
-            'Подтвердите почту в BuildVerdict',
+            'Confirm your email for BuildVerdict',
             createElement(VerificationEmail, { link }),
         );
     }
@@ -73,7 +74,7 @@ export class MailService implements OnApplicationBootstrap {
 
         await this.send(
             email,
-            'Сброс пароля в BuildVerdict',
+            'Reset your BuildVerdict password',
             createElement(PasswordResetEmail, { link }),
         );
     }
@@ -122,7 +123,9 @@ export class MailService implements OnApplicationBootstrap {
     }
 
     private frontendLink(path: string, token: string): string {
-        const origin = this.configService.getOrThrow<string>('ALLOWED_ORIGIN');
+        const [origin] = parseAllowedOrigins(
+            this.configService.getOrThrow<string>('ALLOWED_ORIGIN'),
+        );
 
         return `${origin}${path}?token=${encodeURIComponent(token)}`;
     }

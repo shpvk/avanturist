@@ -10,6 +10,7 @@ import {AvatarStorageService} from "./user/avatar-storage.service";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
 import {IS_DEV_ENV} from "./libs/common/utils/is-dev.utils";
 import {parseBoolean} from "./libs/common/utils/parse-boolean.utils";
+import {parseAllowedOrigins} from "./libs/common/utils/allowed-origins.utils";
 
 function trustProxyValue(raw: string): boolean | number | string {
   if (/^\d+$/.test(raw)) {
@@ -88,7 +89,7 @@ async function bootstrap(): Promise<void> {
   }));
 
   app.enableCors({
-    origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
+    origin: parseAllowedOrigins(config.getOrThrow<string>('ALLOWED_ORIGIN')),
   })
 
   app.useStaticAssets(app.get(AvatarStorageService).root, {
